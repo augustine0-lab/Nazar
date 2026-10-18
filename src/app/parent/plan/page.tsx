@@ -2,6 +2,7 @@ import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
 import { ChildSwitch } from "@/components/ChildSwitch";
 import { PlanView } from "@/components/PlanView";
+import { ProposeGoal } from "@/components/ProposeGoal";
 import { approvePlanAction, consentAction } from "@/app/actions";
 import { getDb } from "@/db";
 import { pickChild } from "@/lib/children";
@@ -70,6 +71,19 @@ export default async function ParentPlan({ searchParams }: { searchParams: Promi
       <section className="card">
         <h2>{current ? t("ppl.currentV", { v: current.version }) : t("ppl.current")}</h2>
         {current ? <PlanView plan={current} /> : <p className="muted">{t("ppl.none")}</p>}
+      </section>
+
+      {active && (
+        <section className="card">
+          <h2>{t("prop.title")}</h2>
+          <ProposeGoal actor={user} studentId={child.id} />
+        </section>
+      )}
+
+      <section className="card">
+        <h2>{t("exp.title")}</h2>
+        <p className="muted small">{t("exp.hint")}</p>
+        <a className="btn" href={`/api/export/${child.id}`} download>⬇ {t("exp.button")}</a>
       </section>
     </Shell>
   );

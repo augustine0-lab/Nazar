@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, uniqueIndex, index, primaryKey } from "drizzle-orm/sqlite-core";
 
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
 const createdAt = () => integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date());
@@ -25,6 +25,10 @@ export const users = sqliteTable(
     role: text("role", { enum: ROLES }).notNull(),
     failedLogins: integer("failed_logins").notNull().default(0),
     lockedUntil: integer("locked_until", { mode: "timestamp_ms" }),
+    // Optional e-mail copies of notifications, only for adults who turn them on.
+    email: text("email"),
+    emailNotify: integer("email_notify", { mode: "boolean" }).notNull().default(false),
+    emailLang: text("email_lang", { enum: ["ru", "kk"] }).notNull().default("ru"),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("users_login_idx").on(t.login)],
@@ -357,3 +361,99 @@ export const scaleResponses = sqliteTable(
   },
   (t) => [index("scale_student_idx").on(t.studentId, t.date)],
 );
+
+/* ---------- social stories (custom ones; the library lives in code) ---------- */
+
+export const stories = sqliteTable("stories", {
+  id: id(),
+  studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  // [{ icon, text }]
+  steps: text("steps", { mode: "json" }).$type<{ icon: string; text: string }[]>().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id),
+  createdAt: createdAt(),
+});
+
+/* ---------- evening bag checklist ---------- */
+
+export const bagItems = sqliteTable("bag_items", {
+  id: id(),
+  studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  icon: text("icon").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const bagDone = sqliteTable(
+  "bag_done",
+  {
+    itemId: text("item_id").notNull().references(() => bagItems.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.itemId, t.date] })],
+);
+
+/* ---------- the big goal a child saves stars for ---------- */
+
+export const goalPins = sqliteTable("goal_pins", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  rewardId: text("reward_id").notNull().references(() => rewards.id, { onDelete: "cascade" }),
+  setById: text("set_by_id").notNull().references(() => users.id),
+});
+
+/* ---------- goals proposed by a parent or teacher for the psychologist ---------- */
+
+export const PROPOSAL_STATUS = ["PROPOSED", "ADOPTED", "DISMISSED"] as const;
+
+export const goalProposals = sqliteTable("goal_proposals", {
+  id: id(),
+  studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => users.id),
+  adultText: text("adult_text").notNull(),
+  childText: text("child_text").notNull(),
+  place: text("place", { enum: GOAL_PLACE }).notNull(),
+  reason: text("reason").notNull().default(""),
+  status: text("status", { enum: PROPOSAL_STATUS }).notNull().default("PROPOSED"),
+  createdAt: createdAt(),
+});
+
+/* ---------- sleep and medication diary (only when a parent turns it on) ---------- */
+
+export const healthSettings = sqliteTable("health_settings", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  enabled: integer("enabled", { mode: "boolean" }).notNull(),
+  changedById: text("changed_by_id").notNull().references(() => users.id),
+  changedAt: integer("changed_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const MEDICATION = ["TAKEN", "SKIPPED", "NONE"] as const;
+export type Medication = (typeof MEDICATION)[number];
+
+export const healthLogs = sqliteTable(
+  "health_logs",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    sleepHours: real("sleep_hours"),
+    medication: text("medication", { enum: MEDICATION }),
+    authorId: text("author_id").notNull().references(() => users.id),
+  },
+  (t) => [uniqueIndex("health_unique_idx").on(t.studentId, t.date)],
+);
+
+/* ---------- outgoing e-mail ---------- */
+
+export const OUTBOX_STATUS = ["PENDING", "SENT", "FAILED"] as const;
+
+export const emailOutbox = sqliteTable("email_outbox", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  to: text("to").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  status: text("status", { enum: OUTBOX_STATUS }).notNull().default("PENDING"),
+  error: text("error"),
+  createdAt: createdAt(),
+  sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+});

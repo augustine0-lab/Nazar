@@ -7,6 +7,9 @@ import { PetCard } from "@/components/PetCard";
 import { ScheduleList } from "@/components/ScheduleList";
 import { SpeakButton } from "@/components/SpeakButton";
 import * as F from "@/lib/feature-services";
+import * as M from "@/lib/more-services";
+import { BagList } from "@/components/BagList";
+import { SavingGoal } from "@/components/SavingGoal";
 import { getDb } from "@/db";
 import { hasActiveConsent } from "@/lib/access";
 import { myStudent } from "@/lib/me";
@@ -28,7 +31,7 @@ export default async function StudentHome() {
     );
   }
   const day = S.workDay();
-  const [st, rewards, hw, plan, sched, moods, pet] = await Promise.all([
+  const [st, rewards, hw, plan, sched, moods, pet, bag, goal] = await Promise.all([
     S.stars(db, me.id, day),
     S.rewardsOf(db, me.id),
     S.homeworkOf(db, me.id, S.today()),
@@ -36,7 +39,16 @@ export default async function StudentHome() {
     F.scheduleForDay(db, me.id, S.today()),
     F.moodsOf(db, me.id, S.today()),
     F.petOf(db, me.id),
+    M.bagFor(db, me.id, S.today()),
+    M.savingGoal(db, me.id),
   ]);
+  const evening = S.nowLocal().hour >= D.BAG_EVENING_HOUR;
+  const bagCard = bag.items.length > 0 && (
+    <section className="card">
+      <h2>🎒 {t("bag.title")}</h2>
+      <BagList items={bag.items.map((i) => ({ id: i.id, title: i.title, icon: i.icon }))} doneIds={[...bag.doneIds]} interactive />
+    </section>
+  );
   const moodSlot = S.nowLocal().hour < 12 ? "MORNING" : "AFTER_SCHOOL";
   const moodNow = moods.find((m) => m.date === S.today() && m.slot === moodSlot)?.mood ?? null;
   const affordable = rewards.filter((r) => r.cost <= st.balance).at(-1);
@@ -48,6 +60,8 @@ export default async function StudentHome() {
       <div className="child stack">
         <h1>{t("st.hello", { name: me.displayName.split(" ")[0] })}</h1>
 
+        {evening && bagCard}
+
         <section className="card">
           <span className="eyebrow">{day === S.today() ? t("st.starsToday") : t("st.starsDay", { date: D.formatDate(day, lang) })}</span>
           <StarRow lit={st.earnedToday} total={Math.max(10, st.earnedToday)} />
@@ -56,6 +70,8 @@ export default async function StudentHome() {
             {affordable ? <>{t("st.canAfford", { title: L(affordable.title) })} <Link href="/student/rewards">{t("st.ask")}</Link></> : next ? <>{t("st.untilNext", { title: L(next.title), n: next.cost - st.balance })}</> : null}
           </div>
         </section>
+
+        {goal && <SavingGoal goal={goal} />}
 
         {(
           <section className="card">
@@ -104,6 +120,13 @@ export default async function StudentHome() {
             <div style={{ marginTop: 12 }}><HomeworkForm studentId={me.id} defaultDue={D.nextSchoolDay(S.today())} /></div>
           </details>
         </section>
+
+        {!evening && bagCard}
+
+        <Link href="/student/stories" className="card list-link">
+          <span><span aria-hidden="true">📖</span> <b>{t("story.title")}</b></span>
+          <span className="muted small">{t("story.lead")}</span>
+        </Link>
 
         <PetCard studentId={me.id} info={pet} />
       </div>

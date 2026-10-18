@@ -297,3 +297,42 @@ label.check { flex-direction: row; gap: 10px; align-items: flex-start; cursor: p
 .report { --bg: #fff; --surface: #fff; --surface-2: #eef2f1; --fg: #111; --muted: #555; --line: #cdd6d4; --c1: #2b7566; --c2: #c98a12; --c3: #6a6fb3; --c4: #b45a8c; --accent: #2b7566; --accent-soft: #d6ece6; --star: #a8730c; --star-soft: #f7ead0; --good: #2b7546; }
 .a11y-body .seg { width: 100%; }
 .a11y-body .seg button { flex: 1 1 0; min-width: 0; padding: 8px 6px; font-size: 0.85rem; overflow-wrap: anywhere; }
+
+/* ---------- bag checklist and saving goal ---------- */
+.sched-edit.bag-edit { grid-template-columns: 40px minmax(0, 1fr) auto; }
+.big-bar { position: relative; height: 18px; overflow: visible; }
+.big-bar > i { background: linear-gradient(90deg, var(--star-fill), var(--star)); }
+.big-bar .tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--surface); opacity: 0.9; }
+
+/* ---------- social stories ---------- */
+.story-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.story-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; min-height: 120px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--fg); text-decoration: none; text-align: center; font-weight: 600; }
+.story-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+.story-card .story-pic { font-size: 2.6rem; line-height: 1; }
+.story { gap: 16px; }
+.story-step { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; min-height: 260px; justify-content: center; }
+.story-step .story-pic { font-size: 5.5rem; line-height: 1; }
+.story-text { font-size: 1.35rem; font-weight: 600; max-width: 32ch; text-wrap: balance; }
+.story-dots { display: flex; justify-content: center; gap: 6px; }
+.story-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); }
+.story-dots i.done { background: var(--accent); border-color: var(--accent); }
+.story-dots i.now { background: var(--star-fill); border-color: var(--star); }
+
+/* ---------- weekly report ---------- */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.kpi { gap: 4px; }
+.kpi .big { font-size: 1.6rem; }
+.trend { font-size: 0.8rem; white-space: nowrap; }
+.trend.up { color: var(--good); }
+.trend.down { color: var(--bad); }
+.trend.same { color: var(--muted); }
+
+/* ---------- goal proposals ---------- */
+.proposals { background: var(--star-soft); border-color: var(--star-fill); gap: 12px; }
+
+/* ---------- show mode ---------- */
+.demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.demo-grid form { display: flex; }
+.demo-role { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; min-height: 64px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.demo-role > span:first-child { font-size: 1.8rem; line-height: 1; }
+.demo-role:hover { border-color: var(--accent); background: var(--accent-soft); }

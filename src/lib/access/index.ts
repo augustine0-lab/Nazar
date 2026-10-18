@@ -70,7 +70,14 @@ export type Permission =
   | "CHAT"
   | "FILL_SCALE"
   | "VIEW_SCALES"
-  | "VIEW_REPORT";
+  | "VIEW_REPORT"
+  | "MANAGE_STORIES"
+  | "MANAGE_BAG"
+  | "DO_BAG"
+  | "PROPOSE_GOAL"
+  | "MANAGE_HEALTH"
+  | "VIEW_HEALTH"
+  | "EXPORT_DATA";
 
 const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLOGIST">> = {
   VIEW: ["SELF", "TEACHER", "PARENT", "PSYCHOLOGIST"],
@@ -92,10 +99,17 @@ const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLO
   FILL_SCALE: ["TEACHER", "PARENT"],
   VIEW_SCALES: ["PSYCHOLOGIST"],
   VIEW_REPORT: ["PSYCHOLOGIST", "PARENT"],
+  MANAGE_STORIES: ["PARENT", "PSYCHOLOGIST"],
+  MANAGE_BAG: ["PARENT", "PSYCHOLOGIST"],
+  DO_BAG: ["SELF"],
+  PROPOSE_GOAL: ["PARENT", "TEACHER"],
+  MANAGE_HEALTH: ["PARENT"],
+  VIEW_HEALTH: ["PARENT", "PSYCHOLOGIST"],
+  EXPORT_DATA: ["PARENT"],
 };
 
-// Without parental consent only the consent itself can be managed.
-const ALLOWED_WITHOUT_CONSENT: Permission[] = ["MANAGE_CONSENT", "VIEW"];
+// Without parental consent only the consent itself can be managed, and a parent can still download what was collected.
+const ALLOWED_WITHOUT_CONSENT: Permission[] = ["MANAGE_CONSENT", "VIEW", "EXPORT_DATA"];
 
 export async function can(db: DB, actor: Actor, permission: Permission, studentId: string): Promise<boolean> {
   const rel = await relationTo(db, actor, studentId);

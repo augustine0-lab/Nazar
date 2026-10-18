@@ -10,6 +10,10 @@ import { authenticate } from "@/lib/authenticate";
 import { endSession, requireUser, startSession, HOME_BY_ROLE } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as F from "@/lib/feature-services";
+import * as M from "@/lib/more-services";
+import { flushOutbox } from "@/lib/mailer";
+import { demoEnabled } from "@/lib/demo-mode";
+import { resetDemo } from "@/db/seed";
 import { LANG_COOKIE, LOCALE, isLang, msgText, type MsgKey, type Params } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { APP_TZ, formatDate, SCALE_ITEM_COUNT } from "@/lib/domain";
@@ -38,6 +42,8 @@ async function run(fn: (a: Actor) => Promise<unknown>, ok: MsgKey | null, params
     if (e instanceof z.ZodError) return { error: t("err.fields") };
     throw e;
   }
+  // Letters queued by notifications go out right away when SMTP is configured; failures stay in the outbox.
+  void flushOutbox(getDb()).catch(() => undefined);
   const text = ok ? t(ok, params) : "";
   if (flash && text) await setFlash(text);
   revalidatePath("/", "layout");
@@ -181,12 +187,14 @@ const planSchema = z.object({
   breakMinutes: z.number().int(),
   goals: z.array(z.object({ adultText: z.string(), childText: z.string(), place: z.enum(["SCHOOL", "HOME"]), lineageId: z.string().nullable() })),
   techniqueIds: z.array(z.string()),
+  adoptedProposalIds: z.array(z.string()).optional(),
 });
 
 export async function submitPlanAction(input: z.infer<typeof planSchema>): Promise<ActionState> {
-  return run((a) => {
-    const p = planSchema.parse(input);
-    return S.submitPlan(getDb(), a, { ...p, goalLineage: p.goals.map((g) => g.lineageId) });
+  return run(async (a) => {
+    const { adoptedProposalIds, ...p } = planSchema.parse(input);
+    await S.submitPlan(getDb(), a, { ...p, goalLineage: p.goals.map((g) => g.lineageId) });
+    if (adoptedProposalIds?.length) await M.decideProposals(getDb(), a, { studentId: p.studentId, ids: adoptedProposalIds, adopt: true });
   }, "flash.planSent");
 }
 
@@ -306,4 +314,96 @@ export async function markNotificationsReadAction() {
 export async function submitScaleAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const answers = Array.from({ length: SCALE_ITEM_COUNT }, (_, i) => Number.parseInt(str(fd, `a${i + 1}`), 10));
   return run((a) => F.submitScale(getDb(), a, { studentId: str(fd, "studentId"), answers }), "flash.scaleSaved");
+}
+
+/* ---------- show mode ---------- */
+
+export async function demoLoginAction(fd: FormData) {
+  if (!demoEnabled()) redirect("/login");
+  const login = str(fd, "login");
+  const user = await getDb().query.users.findFirst({ where: (u, { eq }) => eq(u.login, login) });
+  if (!user) redirect("/demo");
+  await startSession(user.id);
+  redirect(HOME_BY_ROLE[user.role]);
+}
+
+export async function resetDemoAction() {
+  if (!demoEnabled()) redirect("/login");
+  resetDemo(getDb());
+  (await cookies()).delete("nazar_sid");
+  await setFlash((await getT()).t("flash.demoReset"));
+  revalidatePath("/", "layout");
+  redirect("/demo");
+}
+
+/* ---------- social stories ---------- */
+
+export async function saveStoryAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => M.saveStory(getDb(), a, { studentId: str(fd, "studentId"), title: str(fd, "title"), steps: str(fd, "steps") }), "flash.storySaved");
+}
+
+export async function deleteStoryAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => M.deleteStory(getDb(), a, { studentId: str(fd, "studentId"), storyId: str(fd, "storyId") }), "flash.storyDeleted");
+}
+
+/* ---------- bag checklist ---------- */
+
+export async function saveBagItemAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => M.saveBagItem(getDb(), a, { studentId: str(fd, "studentId"), title: str(fd, "title"), icon: str(fd, "icon") }), "flash.bagSaved");
+}
+
+export async function deleteBagItemAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => M.deleteBagItem(getDb(), a, { studentId: str(fd, "studentId"), itemId: str(fd, "itemId") }), "flash.bagDeleted");
+}
+
+export async function setBagDoneAction(itemId: string, done: boolean): Promise<ActionState> {
+  const res = await run((a) => M.setBagDone(getDb(), a, { itemId, done }), null);
+  revalidatePath("/student", "layout");
+  return res;
+}
+
+/* ---------- saving goal and goal proposals ---------- */
+
+export async function pinGoalAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => M.pinGoal(getDb(), a, { studentId: str(fd, "studentId"), rewardId: str(fd, "rewardId") || null }), "flash.goalSaved");
+}
+
+export async function proposeGoalAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const place = str(fd, "place") === "HOME" ? "HOME" : "SCHOOL";
+  return run(
+    (a) => M.proposeGoal(getDb(), a, { studentId: str(fd, "studentId"), adultText: str(fd, "adultText"), childText: str(fd, "childText"), place, reason: str(fd, "reason") }),
+    "flash.proposalSent",
+  );
+}
+
+export async function dismissProposalAction(studentId: string, id: string): Promise<ActionState> {
+  return run((a) => M.decideProposals(getDb(), a, { studentId, ids: [id], adopt: false }), "flash.proposalDismissed", undefined, false);
+}
+
+/* ---------- sleep diary ---------- */
+
+export async function setHealthEnabledAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const enabled = str(fd, "enabled") === "on";
+  return run((a) => M.setHealthEnabled(getDb(), a, { studentId: str(fd, "studentId"), enabled }), enabled ? "flash.healthOn" : "flash.healthOff");
+}
+
+export async function logHealthAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const sleep = str(fd, "sleep").replace(",", ".");
+  const medication = str(fd, "medication");
+  return run(
+    (a) =>
+      M.logHealth(getDb(), a, {
+        studentId: str(fd, "studentId"),
+        date: str(fd, "date"),
+        sleepHours: sleep === "" ? null : Number(sleep),
+        medication: medication || null,
+      }),
+    "flash.healthSaved",
+  );
+}
+
+/* ---------- account ---------- */
+
+export async function saveEmailPrefsAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => M.setEmailPrefs(getDb(), a, { email: str(fd, "email"), notify: str(fd, "notify") === "on", lang: str(fd, "lang") }), "flash.emailSaved");
 }

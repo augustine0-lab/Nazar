@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as schema from "./schema";
 
-export type DB = BetterSQLite3Database<typeof schema>;
+export type DB = BetterSQLite3Database<typeof schema> & { $client: Database.Database };
 
 export function openDb(file = process.env.DATABASE_PATH ?? "./data/nazar.db"): DB {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });

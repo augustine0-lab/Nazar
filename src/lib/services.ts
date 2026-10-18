@@ -16,6 +16,12 @@ import {
   marks,
   moodChecks,
   notifications,
+  stories,
+  bagItems,
+  goalPins,
+  goalProposals,
+  healthLogs,
+  healthSettings,
   planTechniques,
   psychAssignments,
   rewardRequests,
@@ -528,6 +534,12 @@ export async function purgeRevokedData(db: DB, now = new Date()) {
       tx.delete(scaleResponses).where(eq(scaleResponses.studentId, c.studentId)).run();
       tx.delete(scheduleItems).where(eq(scheduleItems.studentId, c.studentId)).run();
       tx.delete(notifications).where(eq(notifications.studentId, c.studentId)).run();
+      tx.delete(stories).where(eq(stories.studentId, c.studentId)).run();
+      tx.delete(bagItems).where(eq(bagItems.studentId, c.studentId)).run();
+      tx.delete(goalPins).where(eq(goalPins.studentId, c.studentId)).run();
+      tx.delete(goalProposals).where(eq(goalProposals.studentId, c.studentId)).run();
+      tx.delete(healthLogs).where(eq(healthLogs.studentId, c.studentId)).run();
+      tx.delete(healthSettings).where(eq(healthSettings.studentId, c.studentId)).run();
     });
     purged.push(c.studentId);
   }

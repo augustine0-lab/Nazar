@@ -1,7 +1,8 @@
 import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
 import { ChildSwitch } from "@/components/ChildSwitch";
-import { grantRewardAction, saveRewardAction } from "@/app/actions";
+import { grantRewardAction, pinGoalAction, saveRewardAction } from "@/app/actions";
+import * as M from "@/lib/more-services";
 import { getDb } from "@/db";
 import { pickChild } from "@/lib/children";
 import { requireUser } from "@/lib/session";
@@ -15,7 +16,7 @@ export default async function ParentRewards({ searchParams }: { searchParams: Pr
   const fmt = (d: Date | null) => (d ? formatStamp(d, lang) : "");
   const db = getDb();
   const { child, kids } = await pickChild(db, user, (await searchParams).child);
-  const [list, st, history] = await Promise.all([S.rewardsOf(db, child.id, true), S.stars(db, child.id), S.rewardRequestsOf(db, child.id)]);
+  const [list, st, history, goal] = await Promise.all([S.rewardsOf(db, child.id, true), S.stars(db, child.id), S.rewardRequestsOf(db, child.id), M.savingGoal(db, child.id)]);
 
   return (
     <Shell current="/parent/rewards">
@@ -25,6 +26,20 @@ export default async function ParentRewards({ searchParams }: { searchParams: Pr
         <span>{t("rewards.stars")} <b className="num" style={{ color: "var(--star)" }}>★ {st.balance}</b></span>
       </div>
       <p className="muted">{t("rewards.tip")}</p>
+
+      <section className="card">
+        <h2>🐷 {t("goal.pinTitle")}</h2>
+        <p className="muted small">{t("goal.pinHint")}</p>
+        {goal && <p>{t("goal.current", { title: L(goal.reward.title), pct: goal.pct })}</p>}
+        <ActionForm action={pinGoalAction} className="row">
+          <input type="hidden" name="studentId" value={child.id} />
+          <select name="rewardId" defaultValue={goal?.reward.id ?? ""} aria-label={t("goal.pinTitle")}>
+            <option value="">{t("goal.none")}</option>
+            {list.filter((r) => r.active).map((r) => <option key={r.id} value={r.id}>{L(r.title)} · ★ {r.cost}</option>)}
+          </select>
+          <button className="btn" type="submit">{t("goal.save")}</button>
+        </ActionForm>
+      </section>
 
       <section className="card">
         <h2>{t("rewards.list")}</h2>

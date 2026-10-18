@@ -116,6 +116,9 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
           <Link className="btn" href={`/chat/${child.id}`}>{t("chat.open")}</Link>
           <Link className="btn" href={`/scale/${child.id}`}>{t("sc.link")}</Link>
           <Link className="btn" href={`/report/${child.id}`}>{t("rp.link")}</Link>
+          <Link className="btn" href={`/parent/week${q}`}>{t("wr.link")}</Link>
+          <Link className="btn" href={`/parent/health${q}`}>{t("hl.link")}</Link>
+          <Link className="btn" href={`/stories/${child.id}`}>{t("story.manage")}</Link>
         </div>
         <p className="muted small">{t("sc.linkHint")}</p>
       </section>

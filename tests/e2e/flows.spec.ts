@@ -118,10 +118,13 @@ test("Kazakh errors and messages", async ({ page }) => {
 });
 
 const SCREENS: Record<string, { login: string; password?: string; paths: string[]; follow?: string }> = {
-  teacher: { login: "aigul", paths: ["/teacher", "/teacher/week", "/chat", "/notifications", "/techniques"], follow: "/teacher" },
-  parent: { login: "gulnar", paths: ["/parent", "/parent/schedule", "/parent/rewards", "/parent/homework", "/parent/plan", "/chat", "/notifications"] },
-  student: { login: "miras", password: "123456", paths: ["/student", "/student/rewards"], follow: "/student" },
-  psychologist: { login: "saule", paths: ["/psych", "/chat", "/notifications", "/techniques"], follow: "/psych" },
+  teacher: { login: "aigul", paths: ["/teacher", "/teacher/week", "/chat", "/notifications", "/techniques", "/help", "/account"], follow: "/teacher" },
+  parent: {
+    login: "gulnar",
+    paths: ["/parent", "/parent/week", "/parent/schedule", "/parent/rewards", "/parent/homework", "/parent/plan", "/parent/health", "/chat", "/notifications", "/help", "/account"],
+  },
+  student: { login: "miras", password: "123456", paths: ["/student", "/student/stories", "/student/stories/lib-angry", "/student/rewards"], follow: "/student" },
+  psychologist: { login: "saule", paths: ["/psych", "/chat", "/notifications", "/techniques", "/help"], follow: "/psych" },
   admin: { login: "admin", paths: ["/admin"] },
 };
 
@@ -158,13 +161,13 @@ for (const lang of ["kk", "ru"] as const) {
 
 test("the child ticks the schedule, notes the mood and picks a pet", async ({ page, browser }) => {
   await login(page, "miras", "123456");
-  const items = page.locator(".sched-item");
+  const items = page.locator(".sched:not(.bag) .sched-item");
   const label = await items.filter({ has: page.locator(".tick:empty") }).first().getAttribute("aria-label");
   const open = page.getByRole("button", { name: label! });
   await open.click();
   await expect(open).toHaveAttribute("aria-pressed", "true");
   await page.reload();
-  await expect(page.locator(".sched-item[aria-pressed=true]").first()).toBeVisible();
+  await expect(page.locator(".sched:not(.bag) .sched-item[aria-pressed=true]").first()).toBeVisible();
 
   await page.getByRole("button", { name: /Хорошо/ }).click();
   await expect(page.getByRole("button", { name: /Хорошо/ })).toHaveAttribute("aria-pressed", "true");

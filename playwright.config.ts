@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: {
     command: `npm run db:seed && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/login`,
-    env: { DATABASE_PATH: "./data/e2e.db" },
+    env: { DATABASE_PATH: "./data/e2e.db", DEMO_MODE: "on" },
     reuseExistingServer: false,
     timeout: 120_000,
   },

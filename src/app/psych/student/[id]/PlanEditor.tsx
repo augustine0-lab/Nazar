@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { submitPlanAction } from "@/app/actions";
+import { dismissProposalAction, submitPlanAction } from "@/app/actions";
 import { MAX_GOALS, validatePlan } from "@/lib/domain";
 import { msgText } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/client";
@@ -20,10 +20,24 @@ const TEMPLATES: { key: string; place: Goal["place"] }[] = [
   { key: "bag", place: "HOME" },
 ];
 type Evidence = "STRONG" | "MODERATE" | "PRACTICE";
+type Proposal = { id: string; adultText: string; childText: string; place: Goal["place"]; reason: string; from: string };
 
-export function PlanEditor({ studentId, initial, techniques }: { studentId: string; initial: Init; techniques: { id: string; title: string; evidence: Evidence }[] }) {
+export function PlanEditor({
+  studentId,
+  initial,
+  techniques,
+  proposals = [],
+}: {
+  studentId: string;
+  initial: Init;
+  techniques: { id: string; title: string; evidence: Evidence }[];
+  proposals?: Proposal[];
+}) {
   const { lang, t } = useI18n();
   const [plan, setPlan] = useState(initial);
+  const [open, setOpen] = useState(proposals);
+  const [adopted, setAdopted] = useState<string[]>([]);
+  const [propError, setPropError] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok?: string; error?: string } | null>(null);
   const [pending, start] = useTransition();
   const errors = validatePlan(plan).map((m) => msgText(lang, m));
@@ -33,11 +47,50 @@ export function PlanEditor({ studentId, initial, techniques }: { studentId: stri
 
   function submit() {
     setMsg(null);
-    start(async () => setMsg(await submitPlanAction({ studentId, ...plan })));
+    start(async () => {
+      const res = await submitPlanAction({ studentId, ...plan, adoptedProposalIds: adopted });
+      setMsg(res);
+      if (res?.ok) setAdopted([]);
+    });
+  }
+
+  // A proposal taken into the plan is marked adopted only when the plan is sent.
+  function take(p: Proposal) {
+    setPlan({ ...plan, goals: [...plan.goals, { adultText: p.adultText, childText: p.childText, place: p.place, lineageId: null }] });
+    setAdopted([...adopted, p.id]);
+    setOpen(open.filter((x) => x.id !== p.id));
+  }
+
+  function dismiss(p: Proposal) {
+    setPropError(null);
+    start(async () => {
+      const res = await dismissProposalAction(studentId, p.id);
+      if (res?.error) setPropError(res.error);
+      else setOpen(open.filter((x) => x.id !== p.id));
+    });
   }
 
   return (
     <div className="stack">
+      {(open.length > 0 || adopted.length > 0) && (
+        <div className="card proposals" style={{ padding: 12 }}>
+          <span className="eyebrow">{t("prop.forPsych")}</span>
+          {open.map((p) => (
+            <div key={p.id} className="stack" style={{ gap: 4 }}>
+              <b>{p.adultText}</b>
+              <span className="small">«{p.childText}» · {p.place === "HOME" ? t("pe.home") : t("pe.school")}</span>
+              <span className="muted small">{p.from}{p.reason ? ` · ${t("prop.why", { reason: p.reason })}` : ""}</span>
+              <div className="row">
+                <button type="button" className="btn" disabled={plan.goals.length >= MAX_GOALS} onClick={() => take(p)}>{t("prop.take")}</button>
+                <button type="button" className="btn quiet" disabled={pending} onClick={() => dismiss(p)}>{t("prop.dismiss")}</button>
+              </div>
+            </div>
+          ))}
+          {open.length > 0 && plan.goals.length >= MAX_GOALS && <p className="muted small">{t("prop.full", { max: MAX_GOALS })}</p>}
+          {adopted.length > 0 && <p className="msg ok small" role="status">{t("prop.taken")}</p>}
+          {propError && <p className="msg err" role="alert">{propError}</p>}
+        </div>
+      )}
       {plan.goals.map((g, i) => (
         <fieldset key={i} className="card" style={{ padding: 12, gap: 8 }}>
           <legend className="eyebrow">{t("pe.goalN", { n: i + 1 })}</legend>
