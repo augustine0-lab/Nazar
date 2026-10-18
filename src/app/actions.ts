@@ -9,9 +9,10 @@ import { AccessDenied, type Actor } from "@/lib/access";
 import { authenticate } from "@/lib/authenticate";
 import { endSession, requireUser, startSession, HOME_BY_ROLE } from "@/lib/session";
 import * as S from "@/lib/services";
+import * as F from "@/lib/feature-services";
 import { LANG_COOKIE, LOCALE, isLang, msgText, type MsgKey, type Params } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
-import { APP_TZ, formatDate } from "@/lib/domain";
+import { APP_TZ, formatDate, SCALE_ITEM_COUNT } from "@/lib/domain";
 
 export type ActionState = { ok?: string; error?: string } | null;
 
@@ -250,4 +251,59 @@ export async function linkAction(_: ActionState, fd: FormData): Promise<ActionSt
 
 export async function resetPasswordAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run((a) => S.resetPassword(getDb(), a, { userId: str(fd, "userId"), password: str(fd, "password") }), "flash.passwordChanged");
+}
+
+/* ---------- mood, pet, schedule ---------- */
+
+export async function logMoodAction(studentId: string, slot: "MORNING" | "AFTER_SCHOOL", mood: number): Promise<ActionState> {
+  const res = await run((a) => F.logMood(getDb(), a, { studentId, slot, mood }), null);
+  revalidatePath("/student", "layout");
+  return res;
+}
+
+export async function choosePetAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => F.choosePet(getDb(), a, { studentId: str(fd, "studentId"), kind: str(fd, "kind"), name: str(fd, "name") }), "flash.petSaved");
+}
+
+export async function saveScheduleItemAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(
+    (a) =>
+      F.saveScheduleItem(getDb(), a, {
+        studentId: str(fd, "studentId"),
+        weekdays: fd.getAll("weekday").map((v) => Number.parseInt(String(v), 10)),
+        time: str(fd, "time"),
+        title: str(fd, "title"),
+        icon: str(fd, "icon"),
+      }),
+    "flash.schedSaved",
+  );
+}
+
+export async function deleteScheduleItemAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => F.deleteScheduleItem(getDb(), a, { studentId: str(fd, "studentId"), itemId: str(fd, "itemId") }), "flash.schedDeleted");
+}
+
+export async function setScheduleDoneAction(itemId: string, done: boolean): Promise<ActionState> {
+  const res = await run((a) => F.setScheduleDone(getDb(), a, { itemId, done }), null);
+  revalidatePath("/student", "layout");
+  return res;
+}
+
+/* ---------- messages and notifications ---------- */
+
+export async function sendChatAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => F.sendChat(getDb(), a, { studentId: str(fd, "studentId"), text: str(fd, "text") }), null);
+}
+
+export async function markNotificationsReadAction() {
+  const a = await actor();
+  await F.markNotificationsRead(getDb(), a.id);
+  revalidatePath("/", "layout");
+}
+
+/* ---------- observation scale ---------- */
+
+export async function submitScaleAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const answers = Array.from({ length: SCALE_ITEM_COUNT }, (_, i) => Number.parseInt(str(fd, `a${i + 1}`), 10));
+  return run((a) => F.submitScale(getDb(), a, { studentId: str(fd, "studentId"), answers }), "flash.scaleSaved");
 }

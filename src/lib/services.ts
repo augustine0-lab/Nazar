@@ -5,6 +5,7 @@ import type { DB } from "@/db";
 import { translate, type Msg, type MsgKey, type Params } from "@/lib/i18n";
 import {
   auditLog,
+  chatMessages,
   classGroups,
   consents,
   dayNotes,
@@ -13,10 +14,14 @@ import {
   homework,
   homeworkSteps,
   marks,
+  moodChecks,
+  notifications,
   planTechniques,
   psychAssignments,
   rewardRequests,
   rewards,
+  scaleResponses,
+  scheduleItems,
   schools,
   selfChecks,
   students,
@@ -28,6 +33,7 @@ import {
 } from "@/db/schema";
 import { AccessDenied, assertCan, can, type Actor } from "./access";
 import * as D from "./domain";
+import { adultsOf, notify } from "./notify";
 import { hashPassword, isPin } from "./password";
 
 /** Carries messages by key so the action layer can show them in the reader's language. */
@@ -41,7 +47,7 @@ const userError = (key: MsgKey, params?: Params) => new UserError([{ key, params
 export const CONSENT_TEXT_VERSION = "2026-10";
 export const PURGE_AFTER_DAYS = 30;
 
-function audit(db: DB, actor: Actor, action: string, studentId: string | null, details?: Record<string, unknown>) {
+export function audit(db: DB, actor: Actor, action: string, studentId: string | null, details?: Record<string, unknown>) {
   db.insert(auditLog).values({ actorId: actor.id, studentId, action, details }).run();
 }
 
@@ -286,6 +292,11 @@ export async function saveDayNote(db: DB, actor: Actor, input: { studentId: stri
     })
     .run();
   audit(db, actor, input.close ? "day.close" : "note.save", input.studentId, { date: input.date });
+  if (closedAt) {
+    const { student } = await getStudent(db, input.studentId);
+    const parents = (await adultsOf(db, input.studentId, actor.id)).filter((a) => a.role === "PARENT");
+    notify(db, parents.map((p) => p.id), "ntf.dayClosed", { child: student.displayName }, input.studentId, `/parent?child=${input.studentId}`);
+  }
 }
 
 /* =========================== rewards =========================== */
@@ -318,6 +329,9 @@ export async function requestReward(db: DB, actor: Actor, input: { studentId: st
   if (pending) throw userError("err.alreadyRequested");
   db.insert(rewardRequests).values({ rewardId: reward.id, studentId: input.studentId, status: "PENDING" }).run();
   audit(db, actor, "reward.request", input.studentId, { rewardId: reward.id });
+  const { student } = await getStudent(db, input.studentId);
+  const parents = (await adultsOf(db, input.studentId)).filter((a) => a.role === "PARENT");
+  notify(db, parents.map((p) => p.id), "ntf.rewardRequest", { child: student.displayName, reward: reward.title }, input.studentId, `/parent?child=${input.studentId}`);
 }
 
 /** Parent grants a reward, either answering a request or directly (requestId omitted). */
@@ -438,6 +452,9 @@ export async function submitPlan(
     for (const techniqueId of new Set(input.techniqueIds)) tx.insert(planTechniques).values({ planId, techniqueId }).run();
   });
   audit(db, actor, "plan.submit", input.studentId, { version });
+  const { student } = await getStudent(db, input.studentId);
+  const parents = (await adultsOf(db, input.studentId)).filter((a) => a.role === "PARENT");
+  notify(db, parents.map((p) => p.id), "ntf.planPending", { child: student.displayName }, input.studentId, `/parent/plan?child=${input.studentId}`);
   return planId;
 }
 
@@ -458,6 +475,8 @@ export async function approvePlan(db: DB, actor: Actor, input: { studentId: stri
       .run();
   });
   audit(db, actor, "plan.approve", input.studentId, { version: plan.version, effectiveFrom });
+  const { student } = await getStudent(db, input.studentId);
+  notify(db, [plan.authorId], "ntf.planApproved", { child: student.displayName }, input.studentId, `/psych/student/${input.studentId}`);
   return effectiveFrom;
 }
 
@@ -504,6 +523,11 @@ export async function purgeRevokedData(db: DB, now = new Date()) {
       tx.delete(selfChecks).where(eq(selfChecks.studentId, c.studentId)).run();
       tx.delete(rewardRequests).where(eq(rewardRequests.studentId, c.studentId)).run();
       tx.delete(homework).where(eq(homework.studentId, c.studentId)).run();
+      tx.delete(moodChecks).where(eq(moodChecks.studentId, c.studentId)).run();
+      tx.delete(chatMessages).where(eq(chatMessages.studentId, c.studentId)).run();
+      tx.delete(scaleResponses).where(eq(scaleResponses.studentId, c.studentId)).run();
+      tx.delete(scheduleItems).where(eq(scheduleItems.studentId, c.studentId)).run();
+      tx.delete(notifications).where(eq(notifications.studentId, c.studentId)).run();
     });
     purged.push(c.studentId);
   }

@@ -10,6 +10,8 @@ import "./globals.css";
 import { I18nProvider } from "@/lib/i18n/client";
 import { dictionary } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/i18n/server";
+import { getPrefs } from "@/lib/prefs-server";
+import { prefsAttributes } from "@/lib/prefs";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -20,8 +22,9 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLang();
+  const prefs = await getPrefs();
   return (
-    <html lang={lang}>
+    <html lang={lang} {...prefsAttributes(prefs)}>
       <body>
         <I18nProvider lang={lang} messages={dictionary(lang)}>{children}</I18nProvider>
       </body>
