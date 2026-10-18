@@ -12,6 +12,18 @@ _Команда вокруг ребёнка_ — идея платформы: в
 
 Подробное техническое задание: https://claude.ai/code/artifact/1c55572f-4b3e-4e07-b25c-be199a1ecdb1
 
+## Как выглядит
+
+Телефон: учитель отмечает цели на уроках, ученик видит звёзды и домашку по шагам. Компьютер: родитель, психолог, администратор.
+
+| Учитель (телефон) | Ученик (телефон) | Домашка с таймером (телефон) |
+|---|---|---|
+| ![](docs/screenshots/t-card.png) | ![](docs/screenshots/s-home.png) | ![](docs/screenshots/s-hw.png) |
+
+![Родитель](docs/screenshots/p-today.png)
+![Психолог](docs/screenshots/ps-student.png)
+![Администратор](docs/screenshots/a-school.png)
+
 ## Быстрый старт
 
 Нужен Node.js 22 или новее.
