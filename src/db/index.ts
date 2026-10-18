@@ -6,7 +6,7 @@ import * as schema from "./schema";
 
 export type DB = BetterSQLite3Database<typeof schema>;
 
-export function openDb(file = process.env.DATABASE_PATH ?? "./data/komanda.db"): DB {
+export function openDb(file = process.env.DATABASE_PATH ?? "./data/nazar.db"): DB {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
   const sqlite = new Database(file);
   sqlite.pragma("journal_mode = WAL");
@@ -15,10 +15,10 @@ export function openDb(file = process.env.DATABASE_PATH ?? "./data/komanda.db"):
 }
 
 // One connection per server process, opened on first use and reused across hot reloads in dev.
-const globalForDb = globalThis as unknown as { __komandaDb?: DB };
+const globalForDb = globalThis as unknown as { __nazarDb?: DB };
 export function getDb(): DB {
-  globalForDb.__komandaDb ??= openDb();
-  return globalForDb.__komandaDb;
+  globalForDb.__nazarDb ??= openDb();
+  return globalForDb.__nazarDb;
 }
 
 export { schema };

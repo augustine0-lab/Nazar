@@ -7,7 +7,7 @@ import { getDb } from "@/db";
 import { sessions, type Role } from "@/db/schema";
 import { createSession, userForSession } from "./authenticate";
 
-const COOKIE = "komanda_sid";
+const COOKIE = "nazar_sid";
 
 export async function startSession(userId: string) {
   const s = await createSession(getDb(), userId);

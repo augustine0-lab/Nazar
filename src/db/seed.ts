@@ -266,7 +266,7 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
 }
 
 if (process.argv[1]?.endsWith("seed.ts")) {
-  const file = process.env.DATABASE_PATH ?? "./data/komanda.db";
+  const file = process.env.DATABASE_PATH ?? "./data/nazar.db";
   for (const f of [file, file + "-wal", file + "-shm"]) fs.rmSync(f, { force: true });
   const db = openDb(file);
   migrate(db, { migrationsFolder: "./drizzle" });

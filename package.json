@@ -1,8 +1,8 @@
 {
-  "name": "komanda",
+  "name": "nazar",
   "version": "0.1.0",
   "private": true,
-  "description": "Команда вокруг ребёнка: платформа поддержки школьников с СДВГ",
+  "description": "Nazar, команда вокруг ребёнка: платформа поддержки школьников с СДВГ",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

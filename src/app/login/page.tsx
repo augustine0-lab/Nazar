@@ -1,7 +1,7 @@
 import { ActionForm } from "@/components/ActionForm";
 import { loginAction } from "@/app/actions";
 
-export const metadata = { title: "Вход · Команда вокруг ребёнка" };
+export const metadata = { title: "Вход · Nazar" };
 
 const DEMO = [
   ["olga", "учитель 3 «Б»"],
@@ -15,8 +15,8 @@ export default function LoginPage() {
   return (
     <main className="login">
       <div className="card">
-        <h1>Команда вокруг ребёнка</h1>
-        <p className="muted">Вход для учителей, родителей, психологов и учеников.</p>
+        <h1>Nazar</h1>
+        <p className="muted">Команда вокруг ребёнка. Вход для учителей, родителей, психологов и учеников.</p>
         <ActionForm action={loginAction} className="stack">
           <label>
             Логин

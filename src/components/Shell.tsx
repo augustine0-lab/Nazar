@@ -22,12 +22,12 @@ const ROLE_LABEL: Record<Role, string> = { TEACHER: "учитель", PARENT: "�
 
 export async function Shell({ current, children }: { current: string; children: React.ReactNode }) {
   const user = await requireUser();
-  const flash = (await cookies()).get("komanda_flash")?.value;
+  const flash = (await cookies()).get("nazar_flash")?.value;
   return (
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <Link href="/" className="brand">Команда вокруг ребёнка</Link>
+          <Link href="/" className="brand">Nazar</Link>
           <nav className="topnav" aria-label="Разделы">
             {NAV[user.role].map((n) => (
               <Link key={n.href} href={n.href} aria-current={current === n.href ? "page" : undefined}>{n.label}</Link>

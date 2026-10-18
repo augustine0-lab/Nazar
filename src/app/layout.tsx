@@ -9,7 +9,7 @@ import "@fontsource/unbounded/700.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Команда вокруг ребёнка",
+  title: "Nazar",
   description: "Платформа поддержки школьников с трудностями внимания: учитель, родитель, психолог и ученик работают по одному плану.",
 };
 

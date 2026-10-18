@@ -17,7 +17,7 @@ async function actor(): Promise<Actor> {
   return { id: u.id, role: u.role, schoolId: u.schoolId };
 }
 
-const FLASH_COOKIE = "komanda_flash";
+const FLASH_COOKIE = "nazar_flash";
 
 /**
  * Runs a service call and turns expected failures into a message for the form.
