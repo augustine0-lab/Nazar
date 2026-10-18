@@ -1,6 +1,8 @@
 // Pure business rules from the specification. No database or framework imports here,
 // so every rule can be unit-tested directly.
 
+import { LOCALE, WEEKDAYS, formatDate as formatDateIn, type Lang, type Msg } from "../i18n";
+
 export type MarkValue = "YES" | "NO" | "NA";
 
 export const MAX_GOALS = 4;
@@ -13,7 +15,7 @@ export const SIMPLIFY_BAR = 0.3;
 
 /* ---------- dates (all dates are local school dates, YYYY-MM-DD) ---------- */
 
-export const APP_TZ = process.env.APP_TZ ?? "Europe/Moscow";
+export const APP_TZ = process.env.APP_TZ ?? "Asia/Almaty";
 
 export function isoDate(d: Date, tz = APP_TZ): string {
   // en-CA formats as YYYY-MM-DD
@@ -60,12 +62,13 @@ export function nextSchoolDay(date: string): string {
   return d;
 }
 
-const RU_WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-export const shortWeekday = (date: string) => RU_WEEKDAYS[weekday(date) - 1];
+export const shortWeekday = (date: string, lang: Lang = "ru") => WEEKDAYS[lang][weekday(date) - 1];
 
-export function formatRuDate(date: string): string {
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(date + "T12:00:00Z"));
-}
+export const formatDate = formatDateIn;
+
+/** A point in time as a school-local date, for example "17 октября 2026". */
+export const formatStamp = (d: Date, lang: Lang, withYear = false) =>
+  d.toLocaleDateString(LOCALE[lang], { day: "numeric", month: "long", ...(withYear ? { year: "numeric" } : {}), timeZone: APP_TZ });
 
 /* ---------- lessons ---------- */
 
@@ -184,18 +187,18 @@ export interface PlanDraftInput {
   breakMinutes: number;
 }
 
-export function validatePlan(p: PlanDraftInput): string[] {
-  const errors: string[] = [];
-  if (p.goals.length < 1) errors.push("Добавьте хотя бы одну цель.");
-  if (p.goals.length > MAX_GOALS) errors.push(`Целей может быть не больше ${MAX_GOALS}.`);
+export function validatePlan(p: PlanDraftInput): Msg[] {
+  const errors: Msg[] = [];
+  if (p.goals.length < 1) errors.push({ key: "plan.err.noGoal" });
+  if (p.goals.length > MAX_GOALS) errors.push({ key: "plan.err.maxGoals", params: { max: MAX_GOALS } });
   p.goals.forEach((g, i) => {
-    if (!g.adultText.trim()) errors.push(`У цели ${i + 1} нет текста для взрослых.`);
-    if (!g.childText.trim()) errors.push(`У цели ${i + 1} нет текста для ребёнка.`);
+    if (!g.adultText.trim()) errors.push({ key: "plan.err.adultText", params: { n: i + 1 } });
+    if (!g.childText.trim()) errors.push({ key: "plan.err.childText", params: { n: i + 1 } });
   });
   if (p.thresholdPct < MIN_THRESHOLD || p.thresholdPct > MAX_THRESHOLD || p.thresholdPct % 5 !== 0)
-    errors.push(`Порог должен быть от ${MIN_THRESHOLD}% до ${MAX_THRESHOLD}% с шагом 5%.`);
-  if (p.workMinutes < 3 || p.workMinutes > 30) errors.push("Время работы: от 3 до 30 минут.");
-  if (p.breakMinutes < 1 || p.breakMinutes > 15) errors.push("Перерыв: от 1 до 15 минут.");
+    errors.push({ key: "plan.err.threshold", params: { min: MIN_THRESHOLD, max: MAX_THRESHOLD } });
+  if (p.workMinutes < 3 || p.workMinutes > 30) errors.push({ key: "plan.err.work" });
+  if (p.breakMinutes < 1 || p.breakMinutes > 15) errors.push({ key: "plan.err.break" });
   return errors;
 }
 

@@ -9,6 +9,9 @@ import { AccessDenied, type Actor } from "@/lib/access";
 import { authenticate } from "@/lib/authenticate";
 import { endSession, requireUser, startSession, HOME_BY_ROLE } from "@/lib/session";
 import * as S from "@/lib/services";
+import { LANG_COOKIE, LOCALE, isLang, msgText, type MsgKey, type Params } from "@/lib/i18n";
+import { getT } from "@/lib/i18n/server";
+import { APP_TZ, formatDate } from "@/lib/domain";
 
 export type ActionState = { ok?: string; error?: string } | null;
 
@@ -20,41 +23,56 @@ async function actor(): Promise<Actor> {
 const FLASH_COOKIE = "nazar_flash";
 
 /**
- * Runs a service call and turns expected failures into a message for the form.
+ * Runs a service call and turns expected failures into a message for the form, in the reader's language.
  * Success messages go to a short-lived cookie the page shows as a toast, because the form
  * that sent the action often disappears after the change (a granted request, an approved plan).
  */
-async function run(fn: (a: Actor) => Promise<unknown>, ok: string, flash = true): Promise<ActionState> {
+async function run(fn: (a: Actor) => Promise<unknown>, ok: MsgKey | null, params?: Params, flash = true): Promise<ActionState> {
+  const { lang, t } = await getT();
   try {
     await fn(await actor());
   } catch (e) {
-    if (e instanceof S.UserError || e instanceof AccessDenied || e instanceof z.ZodError) {
-      return { error: e instanceof z.ZodError ? "Проверьте заполнение полей." : e.message };
-    }
+    if (e instanceof S.UserError) return { error: e.msgs.map((m) => msgText(lang, m)).join(" ") };
+    if (e instanceof AccessDenied) return { error: t("access.denied") };
+    if (e instanceof z.ZodError) return { error: t("err.fields") };
     throw e;
   }
-  if (flash && ok) (await cookies()).set(FLASH_COOKIE, encodeURIComponent(`${Date.now()}|${ok}`), { maxAge: 20, path: "/", sameSite: "lax" });
+  const text = ok ? t(ok, params) : "";
+  if (flash && text) await setFlash(text);
   revalidatePath("/", "layout");
-  return { ok };
+  return { ok: text };
+}
+
+async function setFlash(text: string) {
+  (await cookies()).set(FLASH_COOKIE, encodeURIComponent(`${Date.now()}|${text}`), { maxAge: 20, path: "/", sameSite: "lax" });
 }
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
 const int = (fd: FormData, k: string) => Number.parseInt(str(fd, k), 10);
+
+/* ---------- language ---------- */
+
+export async function setLangAction(lang: string) {
+  if (!isLang(lang)) return;
+  (await cookies()).set(LANG_COOKIE, lang, { maxAge: 365 * 86_400, path: "/", sameSite: "lax" });
+  revalidatePath("/", "layout");
+}
 
 /* ---------- auth ---------- */
 
 export async function loginAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const login = str(fd, "login");
   const password = str(fd, "password");
-  if (!login || !password) return { error: "Введите логин и пароль." };
+  if (!login || !password) return { error: (await getT()).t("err.needCreds") };
   const db = getDb();
   const res = await authenticate(db, login, password);
   if (!res.ok) {
     if (res.reason === "LOCKED") {
-      const t = res.lockedUntil!.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: process.env.APP_TZ ?? "Europe/Moscow" });
-      return { error: `Слишком много попыток. Вход откроется в ${t}.` };
+      const { lang, t } = await getT();
+      const time = res.lockedUntil!.toLocaleTimeString(LOCALE[lang], { hour: "2-digit", minute: "2-digit", timeZone: APP_TZ });
+      return { error: t("err.locked", { time }) };
     }
-    return { error: "Неверный логин или пароль." };
+    return { error: (await getT()).t("err.badLogin") };
   }
   await startSession(res.userId);
   const user = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, res.userId) });
@@ -77,14 +95,14 @@ const markSchema = z.object({
 });
 
 export async function setMarkAction(input: z.infer<typeof markSchema>): Promise<ActionState> {
-  return run((a) => S.setMark(getDb(), a, markSchema.parse(input)), "Отметка сохранена", false);
+  return run((a) => S.setMark(getDb(), a, markSchema.parse(input)), "flash.markSaved", undefined, false);
 }
 
 export async function saveNoteAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const close = str(fd, "intent") === "close";
   return run(
     (a) => S.saveDayNote(getDb(), a, { studentId: str(fd, "studentId"), date: str(fd, "date"), text: str(fd, "text"), close }),
-    close ? "День закрыт, итог отправлен родителю" : "Заметка сохранена",
+    close ? "flash.dayClosed" : "flash.noteSaved",
   );
 }
 
@@ -100,23 +118,23 @@ export async function saveRewardAction(_: ActionState, fd: FormData): Promise<Ac
         cost: int(fd, "cost"),
         active: str(fd, "active") !== "off",
       }),
-    "Награда сохранена",
+    "flash.rewardSaved",
   );
 }
 
 export async function grantRewardAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(
     (a) => S.grantReward(getDb(), a, { studentId: str(fd, "studentId"), rewardId: str(fd, "rewardId"), requestId: str(fd, "requestId") || undefined }),
-    "Награда выдана",
+    "flash.rewardGranted",
   );
 }
 
 export async function declineRewardAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run((a) => S.declineRewardRequest(getDb(), a, { studentId: str(fd, "studentId"), requestId: str(fd, "requestId") }), "Запрос отклонён");
+  return run((a) => S.declineRewardRequest(getDb(), a, { studentId: str(fd, "studentId"), requestId: str(fd, "requestId") }), "flash.requestDeclined");
 }
 
 export async function requestRewardAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run((a) => S.requestReward(getDb(), a, { studentId: str(fd, "studentId"), rewardId: str(fd, "rewardId") }), "Запрос отправлен маме или папе");
+  return run((a) => S.requestReward(getDb(), a, { studentId: str(fd, "studentId"), rewardId: str(fd, "rewardId") }), "flash.requestSent");
 }
 
 /* ---------- homework ---------- */
@@ -131,19 +149,22 @@ export async function createHomeworkAction(_: ActionState, fd: FormData): Promis
         dueDate: str(fd, "dueDate"),
         steps: str(fd, "steps").split("\n"),
       }),
-    "Задание добавлено",
+    "flash.hwAdded",
   );
 }
 
 export async function setStepDoneAction(stepId: string, done: boolean): Promise<ActionState> {
-  return run((a) => S.setStepDone(getDb(), a, { stepId, done }), done ? "Шаг готов" : "Шаг снова открыт", false);
+  return run((a) => S.setStepDone(getDb(), a, { stepId, done }), done ? "flash.stepDone" : "flash.stepReopened", undefined, false);
 }
 
 export async function selfCheckAction(studentId: string, homeworkId: string | null, onTask: boolean): Promise<{ starAwarded: boolean } | { error: string }> {
   try {
     return await S.recordSelfCheck(getDb(), await actor(), { studentId, homeworkId, onTask });
   } catch (e) {
-    if (e instanceof S.UserError || e instanceof AccessDenied) return { error: e.message };
+    if (e instanceof S.UserError || e instanceof AccessDenied) {
+      const { lang, t } = await getT();
+      return { error: e instanceof S.UserError ? e.msgs.map((m) => msgText(lang, m)).join(" ") : t("access.denied") };
+    }
     throw e;
   } finally {
     revalidatePath("/student", "layout");
@@ -165,41 +186,42 @@ export async function submitPlanAction(input: z.infer<typeof planSchema>): Promi
   return run((a) => {
     const p = planSchema.parse(input);
     return S.submitPlan(getDb(), a, { ...p, goalLineage: p.goals.map((g) => g.lineageId) });
-  }, "План отправлен родителю на согласование");
+  }, "flash.planSent");
 }
 
 export async function approvePlanAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const studentId = str(fd, "studentId");
   const planId = str(fd, "planId");
-  if (str(fd, "intent") === "decline") return run((a) => S.declinePlan(getDb(), a, { studentId, planId }), "План возвращён психологу");
+  if (str(fd, "intent") === "decline") return run((a) => S.declinePlan(getDb(), a, { studentId, planId }), "flash.planReturned");
   let from = "";
   const res = await run(async (a) => {
     from = await S.approvePlan(getDb(), a, { studentId, planId });
-  }, "", false);
+  }, null);
   if (res?.error) return res;
-  const ok = `План согласован и действует с ${from.split("-").reverse().join(".")}`;
-  (await cookies()).set(FLASH_COOKIE, encodeURIComponent(`${Date.now()}|${ok}`), { maxAge: 20, path: "/", sameSite: "lax" });
+  const { lang, t } = await getT();
+  const ok = t("flash.planApproved", { date: formatDate(from, lang) });
+  await setFlash(ok);
   return { ok };
 }
 
 export async function consentAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const studentId = str(fd, "studentId");
   return str(fd, "intent") === "revoke"
-    ? run((a) => S.revokeConsent(getDb(), a, studentId), `Согласие отозвано. Сбор данных остановлен, данные будут удалены через ${S.PURGE_AFTER_DAYS} дней.`)
-    : run((a) => S.giveConsent(getDb(), a, studentId), "Согласие сохранено");
+    ? run((a) => S.revokeConsent(getDb(), a, studentId), "flash.consentRevoked", { days: S.PURGE_AFTER_DAYS })
+    : run((a) => S.giveConsent(getDb(), a, studentId), "flash.consentSaved");
 }
 
 /* ---------- admin ---------- */
 
 export async function createUserAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const role = z.enum(["ADMIN", "TEACHER", "PARENT", "PSYCHOLOGIST"]).parse(str(fd, "role"));
-  return run((a) => S.createAdultUser(getDb(), a, { login: str(fd, "login"), name: str(fd, "name"), role, password: str(fd, "password") }), "Пользователь создан");
+  return run((a) => S.createAdultUser(getDb(), a, { login: str(fd, "login"), name: str(fd, "name"), role, password: str(fd, "password") }), "flash.userCreated");
 }
 
 export async function createClassAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(
     (a) => S.createClass(getDb(), a, { name: str(fd, "name"), schoolYear: str(fd, "schoolYear"), teacherId: str(fd, "teacherId") || null }),
-    "Класс создан",
+    "flash.classCreated",
   );
 }
 
@@ -214,7 +236,7 @@ export async function createStudentAction(_: ActionState, fd: FormData): Promise
         classId: str(fd, "classId"),
         birthYear: Number.isFinite(by) ? by : null,
       }),
-    "Ученик добавлен",
+    "flash.studentAdded",
   );
 }
 
@@ -222,10 +244,10 @@ export async function linkAction(_: ActionState, fd: FormData): Promise<ActionSt
   const studentId = str(fd, "studentId");
   const personId = str(fd, "personId");
   return str(fd, "kind") === "psych"
-    ? run((a) => S.assignPsychologist(getDb(), a, { psychologistId: personId, studentId }), "Психолог назначен")
-    : run((a) => S.linkParent(getDb(), a, { parentId: personId, studentId, relation: str(fd, "relation") || "родитель" }), "Родитель привязан");
+    ? run((a) => S.assignPsychologist(getDb(), a, { psychologistId: personId, studentId }), "flash.psychAssigned")
+    : run(async (a) => S.linkParent(getDb(), a, { parentId: personId, studentId, relation: str(fd, "relation") || (await getT()).t("common.parent") }), "flash.parentLinked");
 }
 
 export async function resetPasswordAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run((a) => S.resetPassword(getDb(), a, { userId: str(fd, "userId"), password: str(fd, "password") }), "Пароль изменён");
+  return run((a) => S.resetPassword(getDb(), a, { userId: str(fd, "userId"), password: str(fd, "password") }), "flash.passwordChanged");
 }

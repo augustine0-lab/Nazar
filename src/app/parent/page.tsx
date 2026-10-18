@@ -11,9 +11,11 @@ import { pickChild } from "@/lib/children";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
+import { getT } from "@/lib/i18n/server";
 
 export default async function ParentToday({ searchParams }: { searchParams: Promise<{ child?: string }> }) {
   const user = await requireUser("PARENT");
+  const { lang, t, L } = await getT();
   const db = getDb();
   const { child, kids } = await pickChild(db, user, (await searchParams).child);
   const day = S.workDay();
@@ -26,9 +28,9 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
         <ChildSwitch kids={kids} current={child.id} base="/parent" />
         <h1>{child.displayName}</h1>
         <section className="card warn">
-          <h2>Нужно ваше согласие</h2>
-          <p>Пока вы не дали согласие на обработку данных, учитель не может ставить отметки и план поддержки не работает.</p>
-          <Link className="btn primary" href={`/parent/plan${q}`}>Посмотреть план и дать согласие</Link>
+          <h2>{t("parent.needConsent.title")}</h2>
+          <p>{t("parent.needConsent.body")}</p>
+          <Link className="btn primary" href={`/parent/plan${q}`}>{t("parent.needConsent.cta")}</Link>
         </section>
       </Shell>
     );
@@ -53,51 +55,51 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
       <ChildSwitch kids={kids} current={child.id} base="/parent" />
       <div className="row between">
         <h1>{child.displayName}</h1>
-        <span className="muted">{D.shortWeekday(day)}, {D.formatRuDate(day)}</span>
+        <span className="muted">{D.shortWeekday(day, lang)}, {D.formatDate(day, lang)}</span>
       </div>
 
       {pendingPlan && (
         <section className="card warn">
-          <h2>Психолог предлагает новый план</h2>
-          <p>Посмотрите цели и согласуйте их, чтобы план начал действовать.</p>
-          <Link className="btn primary" href={`/parent/plan${q}`}>Посмотреть план</Link>
+          <h2>{t("parent.newPlan.title")}</h2>
+          <p>{t("parent.newPlan.body")}</p>
+          <Link className="btn primary" href={`/parent/plan${q}`}>{t("parent.newPlan.cta")}</Link>
         </section>
       )}
 
       <div className="grid2">
         <section className="card">
-          <span className="eyebrow">Итог дня в школе</span>
+          <span className="eyebrow">{t("parent.dayTitle")}</span>
           <div className="row">
             <span className="big num">{schoolTally.ratio === null ? "—" : `${D.pct(schoolTally.ratio)}%`}</span>
-            <span className="muted">целей выполнено{sum.plan ? `, цель дня ${sum.plan.thresholdPct}%` : ""}</span>
+            <span className="muted">{sum.plan ? t("parent.goalsDoneTh", { pct: sum.plan.thresholdPct }) : t("parent.goalsDone")}</span>
           </div>
           <div className="stack">
             {schoolGoals.map((g) => {
-              const t = sum.byGoal[g.id];
+              const tl = sum.byGoal[g.id];
               return (
                 <div key={g.id} className="stack" style={{ gap: 4 }}>
-                  <div className="row between small"><span>{g.adultText}</span><span className="muted num">{t.yes} из {t.yes + t.no}</span></div>
-                  <div className="bar"><i style={{ width: `${(t.ratio ?? 0) * 100}%` }} /></div>
+                  <div className="row between small"><span>{L(g.adultText)}</span><span className="muted num">{t("parent.ofCount", { yes: tl.yes, n: tl.yes + tl.no })}</span></div>
+                  <div className="bar"><i style={{ width: `${(tl.ratio ?? 0) * 100}%` }} /></div>
                 </div>
               );
             })}
           </div>
           <p className="msg" style={{ background: "var(--surface-2)" }}>
-            {teacherNote ? <><b>{teacherNote.author}:</b> {teacherNote.note.text}</> : sum.closed ? "Учитель закрыл день без заметки." : "День ещё идёт. Отметки появляются после каждого урока."}
+            {teacherNote ? <><b>{L(teacherNote.author)}:</b> {L(teacherNote.note.text)}</> : sum.closed ? t("parent.noteEmpty") : t("parent.dayRunning")}
           </p>
         </section>
 
         <section className="card">
-          <span className="eyebrow">Неделя</span>
+          <span className="eyebrow">{t("parent.week")}</span>
           <WeekStrip days={week} today={day} />
-          <p className="muted small">Хвалите за прогресс, а не за идеальный результат. Неудачный день не отменяет заработанные звёзды.</p>
+          <p className="muted small">{t("parent.praise")}</p>
           {homeGoals.length > 0 && (
             <>
-              <h3>Дома сегодня</h3>
+              <h3>{t("parent.homeToday")}</h3>
               <HomeGoals
                 studentId={child.id}
                 date={day}
-                goals={homeGoals.map((g) => ({ id: g.id, text: g.adultText, value: sum.marks.find((m) => m.goalId === g.id && m.lessonNo === 0)?.value ?? null }))}
+                goals={homeGoals.map((g) => ({ id: g.id, text: L(g.adultText), value: sum.marks.find((m) => m.goalId === g.id && m.lessonNo === 0)?.value ?? null }))}
               />
             </>
           )}
@@ -106,34 +108,34 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
 
       <section className="card">
         <div className="row between">
-          <h2>Звёзды и награды</h2>
-          <span>Сейчас у {child.displayName.split(" ")[0]}: <b className="num" style={{ color: "var(--star)" }}>★ {st.balance}</b></span>
+          <h2>{t("parent.starsRewards")}</h2>
+          <span>{t("parent.nowHas", { name: child.displayName.split(" ")[0] })} <b className="num" style={{ color: "var(--star)" }}>★ {st.balance}</b></span>
         </div>
         {pendingReq.length ? (
           <div className="list">
             {pendingReq.map(({ request, reward }) => (
               <div key={request.id} className="row between">
-                <span>Просит: <b>{reward.title}</b> <span className="pill star">★ {reward.cost}</span></span>
+                <span>{t("parent.asks")} <b>{L(reward.title)}</b> <span className="pill star">★ {reward.cost}</span></span>
                 <span className="row">
                   <ActionForm action={grantRewardAction} className="row">
                     <input type="hidden" name="studentId" value={child.id} />
                     <input type="hidden" name="rewardId" value={reward.id} />
                     <input type="hidden" name="requestId" value={request.id} />
-                    <button className="btn primary" type="submit" disabled={st.balance < reward.cost}>Выдать</button>
+                    <button className="btn primary" type="submit" disabled={st.balance < reward.cost}>{t("parent.grant")}</button>
                   </ActionForm>
                   <ActionForm action={declineRewardAction} className="row">
                     <input type="hidden" name="studentId" value={child.id} />
                     <input type="hidden" name="requestId" value={request.id} />
-                    <button className="btn quiet" type="submit">Не сегодня</button>
+                    <button className="btn quiet" type="submit">{t("parent.notToday")}</button>
                   </ActionForm>
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="muted">Запросов на награды нет.</p>
+          <p className="muted">{t("parent.noRequests")}</p>
         )}
-        <Link href={`/parent/rewards${q}`}>Настроить награды →</Link>
+        <Link href={`/parent/rewards${q}`}>{t("parent.setupRewards")}</Link>
       </section>
     </Shell>
   );

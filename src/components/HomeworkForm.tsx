@@ -1,20 +1,22 @@
 import { ActionForm } from "./ActionForm";
 import { createHomeworkAction } from "@/app/actions";
+import { getT } from "@/lib/i18n/server";
 
-export function HomeworkForm({ studentId, defaultDue }: { studentId: string; defaultDue: string }) {
+export async function HomeworkForm({ studentId, defaultDue }: { studentId: string; defaultDue: string }) {
+  const { t } = await getT();
   return (
     <ActionForm action={createHomeworkAction} className="stack">
       <input type="hidden" name="studentId" value={studentId} />
       <div className="form-grid">
-        <label>Предмет<input name="subject" required placeholder="Математика" /></label>
-        <label>Задание<input name="title" required placeholder="Учебник, с. 42" /></label>
-        <label>Срок<input name="dueDate" type="date" defaultValue={defaultDue} required /></label>
+        <label>{t("hw.subject")}<input name="subject" required placeholder={t("hw.subjectExample")} /></label>
+        <label>{t("hw.task")}<input name="title" required placeholder={t("hw.taskExample")} /></label>
+        <label>{t("hw.due")}<input name="dueDate" type="date" defaultValue={defaultDue} required /></label>
       </div>
       <label>
-        Шаги, каждый с новой строки (по 5–10 минут, до 12 шагов)
-        <textarea name="steps" rows={5} required placeholder={"Открыть учебник на с. 42\nЗадача № 1\nЗадача № 2"} />
+        {t("hw.steps")}
+        <textarea name="steps" rows={5} required placeholder={t("hw.stepsExample")} />
       </label>
-      <button className="btn primary" type="submit">Добавить задание</button>
+      <button className="btn primary" type="submit">{t("hw.add")}</button>
     </ActionForm>
   );
 }

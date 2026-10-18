@@ -2,10 +2,12 @@
 
 import { useOptimistic, useTransition } from "react";
 import { setStepDoneAction } from "@/app/actions";
+import { useI18n } from "@/lib/i18n/client";
 
 type Step = { id: string; text: string; done: boolean };
 
 export function Steps({ steps }: { steps: Step[] }) {
+  const { t } = useI18n();
   const [, start] = useTransition();
   const [list, toggle] = useOptimistic(steps, (s: Step[], id: string) => s.map((x) => (x.id === id ? { ...x, done: !x.done } : x)));
   const current = list.findIndex((s) => !s.done);
@@ -13,8 +15,8 @@ export function Steps({ steps }: { steps: Step[] }) {
   return (
     <div className="stack">
       <div className="row between">
-        <h2>{current === -1 ? "Всё готово! Покажи маме или папе" : `Шаг ${current + 1}`}</h2>
-        <span className="muted num">{doneCount} из {list.length}</span>
+        <h2>{current === -1 ? t("st.allDone") : t("st.stepN", { n: current + 1 })}</h2>
+        <span className="muted num">{t("st.progress", { done: doneCount, n: list.length })}</span>
       </div>
       <div className="steps">
         {list.map((s, i) => (

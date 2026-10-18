@@ -2,11 +2,11 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { setMarkAction } from "@/app/actions";
+import { useI18n } from "@/lib/i18n/client";
 
 type Value = "YES" | "NO" | "NA";
 type Mark = { goalId: string; lessonNo: number; value: Value };
 
-const LABEL: Record<Value, string> = { YES: "Да", NO: "Нет", NA: "—" };
 const CLS: Record<Value, string> = { YES: "yes", NO: "no", NA: "na" };
 
 export function MarkGrid(props: {
@@ -17,6 +17,8 @@ export function MarkGrid(props: {
   initialMarks: Mark[];
   initialLesson: number;
 }) {
+  const { t } = useI18n();
+  const label: Record<Value, string> = { YES: t("common.yes"), NO: t("common.no"), NA: "—" };
   const [lesson, setLesson] = useState(props.initialLesson);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -44,10 +46,10 @@ export function MarkGrid(props: {
 
   return (
     <div className="stack" aria-busy={pending}>
-      <div className="lessons" role="group" aria-label="Урок">
-        {props.bell.map((t, i) => (
-          <button key={t} type="button" className={lessonDone(i + 1) ? "done" : ""} aria-pressed={lesson === i + 1} onClick={() => setLesson(i + 1)}>
-            <span className="dot" />{i + 1} урок · {t}
+      <div className="lessons" role="group" aria-label={t("mark.lesson")}>
+        {props.bell.map((time, i) => (
+          <button key={time} type="button" className={lessonDone(i + 1) ? "done" : ""} aria-pressed={lesson === i + 1} onClick={() => setLesson(i + 1)}>
+            <span className="dot" />{t("mark.lessonLabel", { n: i + 1, time })}
           </button>
         ))}
       </div>
@@ -58,7 +60,7 @@ export function MarkGrid(props: {
             <span className="seg" role="group" aria-label={g.text}>
               {(["YES", "NO", "NA"] as Value[]).map((v) => (
                 <button key={v} type="button" className={CLS[v]} aria-pressed={valueOf(g.id, lesson) === v} onClick={() => set(g.id, v)}>
-                  {LABEL[v]}
+                  {label[v]}
                 </button>
               ))}
             </span>

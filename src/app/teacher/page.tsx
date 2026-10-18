@@ -4,10 +4,12 @@ import { getDb } from "@/db";
 import { requireUser } from "@/lib/session";
 import { hasActiveConsent } from "@/lib/access";
 import * as S from "@/lib/services";
-import { formatRuDate, pct } from "@/lib/domain";
+import { formatDate, pct } from "@/lib/domain";
+import { getT } from "@/lib/i18n/server";
 
 export default async function TeacherHome() {
   const user = await requireUser("TEACHER");
+  const { lang, t } = await getT();
   const db = getDb();
   const day = S.workDay();
   const kids = await S.studentsForActor(db, user);
@@ -24,11 +26,11 @@ export default async function TeacherHome() {
   return (
     <Shell current="/teacher">
       <div className="row between">
-        <h1>Мой класс</h1>
-        <span className="muted">{formatRuDate(day)}</span>
+        <h1>{t("nav.myClass")}</h1>
+        <span className="muted">{formatDate(day, lang)}</span>
       </div>
       <section className="card">
-        <p className="muted small">Здесь только дети с планом поддержки. Одноклассники не видят, у кого он есть.</p>
+        <p className="muted small">{t("tc.onlyPlan")}</p>
         <div className="list">
           {rows.map((r) => (
             <Link key={r.id} href={`/teacher/student/${r.id}`} className="list-link">
@@ -38,19 +40,19 @@ export default async function TeacherHome() {
               </span>
               <span className="row">
                 {!r.consent ? (
-                  <span className="pill star">нет согласия родителя</span>
+                  <span className="pill star">{t("tc.noConsent")}</span>
                 ) : !r.hasPlan ? (
-                  <span className="pill">план не согласован</span>
+                  <span className="pill">{t("tc.planNotApproved")}</span>
                 ) : (
                   <>
-                    <span className="pill num">уроков отмечено: {r.lessonsDone} из {r.lessons}</span>
+                    <span className="pill num">{t("tc.lessonsMarked", { done: r.lessonsDone, total: r.lessons })}</span>
                     {r.sum.tally.ratio !== null && <span className={`pill num ${r.sum.success ? "good" : ""}`}>{pct(r.sum.tally.ratio)}%</span>}
                   </>
                 )}
               </span>
             </Link>
           ))}
-          {!rows.length && <p className="muted">В вашем классе пока нет детей с планом поддержки.</p>}
+          {!rows.length && <p className="muted">{t("tc.empty")}</p>}
         </div>
       </section>
     </Shell>

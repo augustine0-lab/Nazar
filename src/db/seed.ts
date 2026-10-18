@@ -9,55 +9,16 @@ import * as D from "../lib/domain";
 export const DEMO_PASSWORD = "demo1234";
 export const DEMO_PIN = "123456";
 
+// Demo texts are stored as "@<key>" and translated on screen (see src/lib/i18n/messages/demo.ts).
 const TECHNIQUES: (typeof s.techniques.$inferInsert)[] = [
-  {
-    title: "Ежедневная карточка поведения",
-    body: "2–4 конкретные цели, отметка после каждого урока, награда дома в тот же день. Цели формулируются как действие, которое можно увидеть.",
-    evidence: "STRONG",
-    source: "Pyle, Fabiano (2017), Exceptional Children; Moore и соавт. (2018), Review of Education",
-  },
-  {
-    title: "Немедленная конкретная похвала",
-    body: "Хвалить сразу после нужного поведения и называть его: «Ты сразу начал задачу, отлично». Соотношение похвалы и замечаний не меньше 4 к 1.",
-    evidence: "STRONG",
-    source: "Moore и соавт. (2018), Review of Education",
-  },
-  {
-    title: "Короткие и понятные инструкции",
-    body: "Одна инструкция за раз, глазной контакт, попросить повторить своими словами. Многошаговые инструкции записывать на доске.",
-    evidence: "MODERATE",
-    source: "Moore и соавт. (2018), Review of Education",
-  },
-  {
-    title: "Разбивка заданий на части",
-    body: "Давать задание частями по 5–10 минут, после каждой части короткая проверка и следующий шаг.",
-    evidence: "MODERATE",
-    source: "Moore и соавт. (2018), Review of Education",
-  },
-  {
-    title: "Самонаблюдение",
-    body: "Тихий сигнал раз в 5–10 минут, ученик сам отмечает, занимается ли он заданием. Сверять с отметкой учителя раз в день.",
-    evidence: "MODERATE",
-    source: "Исследования одного случая, обзор в Moore и соавт. (2018)",
-  },
-  {
-    title: "Двигательные паузы",
-    body: "Разрешённое движение: раздать тетради, отнести журнал, встать у парты. 1–2 минуты каждые 15–20 минут.",
-    evidence: "PRACTICE",
-    source: "Практика учителей, данные ограничены",
-  },
-  {
-    title: "Место в классе",
-    body: "Ближе к учителю, подальше от окна и двери, рядом со спокойным одноклассником.",
-    evidence: "PRACTICE",
-    source: "Практика учителей, данные ограничены",
-  },
-  {
-    title: "Визуальное расписание урока",
-    body: "План урока из 3–5 пунктов на доске, отмечать выполненные пункты. Помогает переключаться между заданиями.",
-    evidence: "PRACTICE",
-    source: "Принципы универсального дизайна для обучения (UDL)",
-  },
+  { title: "@demo.tech.card.title", body: "@demo.tech.card.body", evidence: "STRONG", source: "@demo.src.pyle" },
+  { title: "@demo.tech.praise.title", body: "@demo.tech.praise.body", evidence: "STRONG", source: "@demo.src.moore" },
+  { title: "@demo.tech.instr.title", body: "@demo.tech.instr.body", evidence: "MODERATE", source: "@demo.src.moore" },
+  { title: "@demo.tech.chunk.title", body: "@demo.tech.chunk.body", evidence: "MODERATE", source: "@demo.src.moore" },
+  { title: "@demo.tech.self.title", body: "@demo.tech.self.body", evidence: "MODERATE", source: "@demo.src.single" },
+  { title: "@demo.tech.move.title", body: "@demo.tech.move.body", evidence: "PRACTICE", source: "@demo.src.practice" },
+  { title: "@demo.tech.seat.title", body: "@demo.tech.seat.body", evidence: "PRACTICE", source: "@demo.src.practice" },
+  { title: "@demo.tech.visual.title", body: "@demo.tech.visual.body", evidence: "PRACTICE", source: "@demo.src.udl" },
 ];
 
 /** Small deterministic generator so the demo looks the same on every run. */
@@ -77,27 +38,27 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
 
   const schoolId = crypto.randomUUID();
   const bell = ["08:30", "09:25", "10:20", "11:20", "12:15"];
-  db.insert(s.schools).values({ id: schoolId, name: "Школа № 17 (демо)", bellSchedule: bell }).run();
+  db.insert(s.schools).values({ id: schoolId, name: "@demo.school", bellSchedule: bell }).run();
 
   const user = (login: string, name: string, role: s.Role, hash = pw) => {
     const id = crypto.randomUUID();
     db.insert(s.users).values({ id, schoolId, login, name, role, passwordHash: hash }).run();
     return id;
   };
-  const admin = user("admin", "Администратор школы", "ADMIN");
-  const olga = user("olga", "Ольга Петровна", "TEACHER");
-  const ivan = user("ivan", "Иван Сергеевич", "TEACHER");
-  const elena = user("elena", "Елена Соколова", "PARENT");
-  const timur = user("timur", "Тимур Ким", "PARENT");
-  const marina = user("marina", "Марина Орлова", "PARENT");
-  const natalia = user("natalia", "Наталья Викторовна", "PSYCHOLOGIST");
+  const admin = user("admin", "@demo.adminName", "ADMIN");
+  const aigul = user("aigul", "Айгүл Нұрғалиқызы", "TEACHER");
+  const nurlan = user("nurlan", "Нұрлан Маратұлы", "TEACHER");
+  const gulnar = user("gulnar", "Гүлнар Сейітова", "PARENT");
+  const erlan = user("erlan", "Ерлан Қасымов", "PARENT");
+  const dana = user("dana", "Дана Әлиева", "PARENT");
+  const saule = user("saule", "Сәуле Бақытқызы", "PSYCHOLOGIST");
   void admin;
 
   const class3b = crypto.randomUUID();
   const class4a = crypto.randomUUID();
   db.insert(s.classGroups).values([
-    { id: class3b, schoolId, name: "3 «Б»", schoolYear: "2026/2027", teacherId: olga },
-    { id: class4a, schoolId, name: "4 «А»", schoolYear: "2026/2027", teacherId: ivan },
+    { id: class3b, schoolId, name: "3 «Б»", schoolYear: "2026/2027", teacherId: aigul },
+    { id: class4a, schoolId, name: "4 «А»", schoolYear: "2026/2027", teacherId: nurlan },
   ]).run();
 
   const child = (login: string, name: string, classId: string, birthYear: number) => {
@@ -106,26 +67,26 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
     db.insert(s.students).values({ id, userId, classId, displayName: name, birthYear }).run();
     return id;
   };
-  const misha = child("misha", "Миша Соколов", class3b, 2017);
-  const anya = child("anya", "Аня Ким", class3b, 2017);
-  const sasha = child("sasha", "Саша Орлов", class4a, 2016);
+  const miras = child("miras", "Мирас Сейітов", class3b, 2017);
+  const aliya = child("aliya", "Алия Қасымова", class3b, 2017);
+  const sanzhar = child("sanzhar", "Санжар Әлиев", class4a, 2016);
 
   db.insert(s.guardianships).values([
-    { parentId: elena, studentId: misha, relation: "мама" },
-    { parentId: timur, studentId: anya, relation: "папа" },
-    { parentId: marina, studentId: sasha, relation: "мама" },
+    { parentId: gulnar, studentId: miras, relation: "@demo.mother" },
+    { parentId: erlan, studentId: aliya, relation: "@demo.father" },
+    { parentId: dana, studentId: sanzhar, relation: "@demo.mother" },
   ]).run();
   db.insert(s.psychAssignments).values([
-    { psychologistId: natalia, studentId: misha },
-    { psychologistId: natalia, studentId: anya },
-    { psychologistId: natalia, studentId: sasha },
+    { psychologistId: saule, studentId: miras },
+    { psychologistId: saule, studentId: aliya },
+    { psychologistId: saule, studentId: sanzhar },
   ]).run();
 
-  // Sasha's mother has not given consent yet, which shows how the platform blocks data collection.
+  // Sanzhar's mother has not given consent yet, which shows how the platform blocks data collection.
   const fourWeeksAgo = D.addDays(D.mondayOf(todayDate), -21);
   db.insert(s.consents).values([
-    { parentId: elena, studentId: misha, textVersion: "2026-10", givenAt: new Date(fourWeeksAgo + "T09:00:00Z") },
-    { parentId: timur, studentId: anya, textVersion: "2026-10", givenAt: new Date(fourWeeksAgo + "T09:00:00Z") },
+    { parentId: gulnar, studentId: miras, textVersion: "2026-10", givenAt: new Date(fourWeeksAgo + "T09:00:00Z") },
+    { parentId: erlan, studentId: aliya, textVersion: "2026-10", givenAt: new Date(fourWeeksAgo + "T09:00:00Z") },
   ]).run();
 
   const techniqueIds = TECHNIQUES.map((t) => {
@@ -151,8 +112,8 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
       status,
       thresholdPct,
       effectiveFrom,
-      authorId: natalia,
-      approvedById: status === "ACTIVE" ? elena : null,
+      authorId: saule,
+      approvedById: status === "ACTIVE" ? gulnar : null,
       approvedAt: status === "ACTIVE" ? new Date(fourWeeksAgo + "T10:00:00Z") : null,
     }).run();
     const goalIds = goalDefs.map((g, position) => {
@@ -172,22 +133,22 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
     return { id, goalIds };
   };
 
-  const mishaPlan = plan(misha, 1, "ACTIVE", fourWeeksAgo, [
-    { adult: "Начинает задание в течение 2 минут", child: "Начинаю задание сразу" },
-    { adult: "Поднимает руку, а не выкрикивает", child: "Поднимаю руку" },
-    { adult: "Записывает домашнее задание", child: "Записываю домашку" },
-    { adult: "Собирает портфель с вечера", child: "Собираю портфель вечером", place: "HOME" },
+  const mishaPlan = plan(miras, 1, "ACTIVE", fourWeeksAgo, [
+    { adult: "@demo.goal.start.adult", child: "@demo.goal.start.child" },
+    { adult: "@demo.goal.hand.adult", child: "@demo.goal.hand.child" },
+    { adult: "@demo.goal.diary.adult", child: "@demo.goal.diary.child" },
+    { adult: "@demo.goal.bag.adult", child: "@demo.goal.bag.child", place: "HOME" },
   ]);
-  const anyaV1 = plan(anya, 1, "ACTIVE", fourWeeksAgo, [
-    { adult: "Остаётся на месте до конца задания", child: "Сижу до конца задания" },
-    { adult: "Выполняет инструкцию с первого раза", child: "Делаю с первого раза" },
+  const anyaV1 = plan(aliya, 1, "ACTIVE", fourWeeksAgo, [
+    { adult: "@demo.goal.stay.adult", child: "@demo.goal.stay.child" },
+    { adult: "@demo.goal.instr.adult", child: "@demo.goal.instr.child" },
   ], 65, [0, 2, 5]);
   const [anyaG1] = anyaV1.goalIds;
   const anyaLineage = db.select().from(s.goals).all().find((g) => g.id === anyaG1)!.lineageId;
-  plan(anya, 2, "PENDING", null, [
-    { adult: "Остаётся на месте до конца задания", child: "Сижу до конца задания", lineage: anyaLineage },
-    { adult: "Выполняет инструкцию с первого раза", child: "Делаю с первого раза" },
-    { adult: "Работает в паре без конфликтов", child: "Работаю в паре дружно" },
+  plan(aliya, 2, "PENDING", null, [
+    { adult: "@demo.goal.stay.adult", child: "@demo.goal.stay.child", lineage: anyaLineage },
+    { adult: "@demo.goal.instr.adult", child: "@demo.goal.instr.child" },
+    { adult: "@demo.goal.pair.adult", child: "@demo.goal.pair.child" },
   ], 70, [0, 2, 5, 6]);
 
   // History: chances of a YES grow week by week, so the charts show progress.
@@ -202,65 +163,65 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
           goalIds.forEach((goalId, gi) => {
             // Homework is only written down in the last two lessons of the day.
             const value: s.MarkValue = gi === 2 && lesson < 4 ? "NA" : rand() < Math.min(0.95, base[gi] + step * week) ? "YES" : "NO";
-            db.insert(s.marks).values({ studentId, goalId, date: d, lessonNo: lesson, value, authorId: olga }).run();
+            db.insert(s.marks).values({ studentId, goalId, date: d, lessonNo: lesson, value, authorId: aigul }).run();
           });
         }
         if (homeGoal && d < demoDay)
           db.insert(s.marks).values({ studentId, goalId: homeGoal, date: d, lessonNo: 0, value: rand() < 0.6 + 0.08 * week ? "YES" : "NO", authorId: homeAuthor! }).run();
         if (d < demoDay)
-          db.insert(s.dayNotes).values({ studentId, date: d, authorId: olga, text: "", closedAt: new Date(d + "T15:00:00Z") }).run();
+          db.insert(s.dayNotes).values({ studentId, date: d, authorId: aigul, text: "", closedAt: new Date(d + "T15:00:00Z") }).run();
       }
       d = D.addDays(d, 1);
     }
   };
-  fill(misha, mishaPlan.goalIds.slice(0, 3), [0.45, 0.25, 0.6], 0.1, mishaPlan.goalIds[3], elena);
-  fill(anya, anyaV1.goalIds, [0.35, 0.5], 0.06);
+  fill(miras, mishaPlan.goalIds.slice(0, 3), [0.45, 0.25, 0.6], 0.1, mishaPlan.goalIds[3], gulnar);
+  fill(aliya, anyaV1.goalIds, [0.35, 0.5], 0.06);
 
   db.insert(s.dayNotes).values({
-    studentId: misha,
+    studentId: miras,
     date: D.previousSchoolDay(demoDay),
-    authorId: olga,
-    text: "Хорошо работал в паре на математике, сам вспомнил записать домашку.",
+    authorId: aigul,
+    text: "@demo.note.pair",
     closedAt: new Date(D.previousSchoolDay(demoDay) + "T15:00:00Z"),
-  }).onConflictDoUpdate({ target: [s.dayNotes.studentId, s.dayNotes.date, s.dayNotes.authorId], set: { text: "Хорошо работал в паре на математике, сам вспомнил записать домашку." } }).run();
+  }).onConflictDoUpdate({ target: [s.dayNotes.studentId, s.dayNotes.date, s.dayNotes.authorId], set: { text: "@demo.note.pair" } }).run();
 
   const reward = (studentId: string, title: string, cost: number) => {
     const id = crypto.randomUUID();
     db.insert(s.rewards).values({ id, studentId, title, cost }).run();
     return id;
   };
-  const game = reward(misha, "15 минут любимой игры", 5);
-  reward(misha, "Выбрать мультфильм на вечер", 4);
-  const cookies = reward(misha, "Печь вместе печенье", 8);
-  reward(misha, "Поход в парк с папой", 12);
-  reward(anya, "Выбрать настольную игру на вечер", 5);
-  reward(anya, "Рисовать вместе 20 минут", 6);
+  const game = reward(miras, "@demo.reward.game", 5);
+  reward(miras, "@demo.reward.cartoon", 4);
+  const cookies = reward(miras, "@demo.reward.cookies", 8);
+  reward(miras, "@demo.reward.park", 12);
+  reward(aliya, "@demo.reward.board", 5);
+  reward(aliya, "@demo.reward.draw", 6);
 
   // Spend most of the earned history so the balance stays small and realistic (9 stars left).
-  const earned = db.select().from(s.marks).all().filter((m) => m.studentId === misha && m.value === "YES").length;
+  const earned = db.select().from(s.marks).all().filter((m) => m.studentId === miras && m.value === "YES").length;
   let left = earned;
   for (let i = 0; left - (i % 3 === 0 ? 8 : 5) >= 9; i++) {
     const cost = i % 3 === 0 ? 8 : 5;
     db.insert(s.rewardRequests).values({
       rewardId: cost === 8 ? cookies : game,
-      studentId: misha,
+      studentId: miras,
       status: "GRANTED",
       costAtGrant: cost,
-      decidedById: elena,
+      decidedById: gulnar,
       decidedAt: new Date(D.addDays(fourWeeksAgo, Math.floor(i / 2)) + "T18:00:00Z"),
     }).run();
     left -= cost;
   }
-  db.insert(s.rewardRequests).values({ rewardId: game, studentId: misha, status: "PENDING" }).run();
+  db.insert(s.rewardRequests).values({ rewardId: game, studentId: miras, status: "PENDING" }).run();
 
   const hwId = crypto.randomUUID();
-  db.insert(s.homework).values({ id: hwId, studentId: misha, subject: "Математика", title: "Учебник, с. 42", dueDate: D.nextSchoolDay(demoDay), authorId: olga }).run();
-  ["Открыть тетрадь и учебник на с. 42", "Задача № 1: прочитать и решить", "Задача № 2", "Пример № 3, первый столбик", "Пример № 3, второй столбик", "Показать маме"].forEach(
+  db.insert(s.homework).values({ id: hwId, studentId: miras, subject: "@demo.hw.math", title: "@demo.hw.mathTitle", dueDate: D.nextSchoolDay(demoDay), authorId: aigul }).run();
+  ["math.s1", "math.s2", "math.s3", "math.s4", "math.s5", "math.s6"].map((k) => `@demo.hw.${k}`).forEach(
     (text, position) => db.insert(s.homeworkSteps).values({ homeworkId: hwId, text, position, doneAt: position === 0 ? new Date() : null }).run(),
   );
   const hw2 = crypto.randomUUID();
-  db.insert(s.homework).values({ id: hw2, studentId: misha, subject: "Русский язык", title: "Упражнение 87", dueDate: D.nextSchoolDay(demoDay), authorId: elena }).run();
-  ["Прочитать задание вслух", "Списать первые 3 предложения", "Подчеркнуть подлежащее", "Списать оставшиеся предложения", "Проверить по образцу"].forEach(
+  db.insert(s.homework).values({ id: hw2, studentId: miras, subject: "@demo.hw.lang", title: "@demo.hw.langTitle", dueDate: D.nextSchoolDay(demoDay), authorId: gulnar }).run();
+  ["lang.s1", "lang.s2", "lang.s3", "lang.s4", "lang.s5"].map((k) => `@demo.hw.${k}`).forEach(
     (text, position) => db.insert(s.homeworkSteps).values({ homeworkId: hw2, text, position }).run(),
   );
 }
@@ -271,5 +232,5 @@ if (process.argv[1]?.endsWith("seed.ts")) {
   const db = openDb(file);
   migrate(db, { migrationsFolder: "./drizzle" });
   seed(db);
-  console.log(`Демо-школа создана. Пароль взрослых: ${DEMO_PASSWORD}, PIN детей: ${DEMO_PIN}.`);
+  console.log(`Демо-школа создана / Демо-мектеп жасалды. demo1234 / 123456 (${DEMO_PASSWORD} / ${DEMO_PIN}).`);
 }

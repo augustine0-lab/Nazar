@@ -8,11 +8,11 @@ import { can } from "@/lib/access";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
-
-const STATUS = { DRAFT: "возвращён на доработку", PENDING: "ждёт родителя", ACTIVE: "действует", ARCHIVED: "в архиве" } as const;
+import { getT } from "@/lib/i18n/server";
 
 export default async function PsychStudent({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("PSYCHOLOGIST");
+  const { lang, t, L } = await getT();
   const { id } = await params;
   const db = getDb();
   if (!(await can(db, user, "VIEW", id))) notFound();
@@ -33,62 +33,63 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
   return (
     <Shell current="/psych">
       <div className="stack" style={{ gap: 2 }}>
-        <Link href="/psych" className="small">← Мои дети</Link>
+        <Link href="/psych" className="small">{t("ps.back")}</Link>
         <h1>{student.displayName}</h1>
-        <span className="muted">{cls.name}{student.birthYear ? `, ${student.birthYear} г. р.` : ""}</span>
+        <span className="muted">{cls.name}{student.birthYear ? t("ps.birth", { year: student.birthYear }) : ""}</span>
       </div>
 
       <section className="card">
-        <div className="row between"><h2>Динамика по неделям</h2><span className="eyebrow">доля уроков с выполненной целью</span></div>
-        {series.goals.length ? <GoalChart goals={series.goals} weeks={series.weeks} threshold={current?.thresholdPct ?? base?.thresholdPct ?? 70} /> : <p className="muted">Данных пока нет.</p>}
+        <div className="row between"><h2>{t("ps.dynamics")}</h2><span className="eyebrow">{t("ps.share")}</span></div>
+        {series.goals.length ? <GoalChart goals={series.goals.map((g) => ({ ...g, adultText: L(g.adultText) }))} weeks={series.weeks} threshold={current?.thresholdPct ?? base?.thresholdPct ?? 70} /> : <p className="muted">{t("ps.noData")}</p>}
         {hints.map(({ g, s }) => (
           <p key={g.id} className="msg" style={{ background: "var(--star-soft)" }}>
             {s === "RAISE"
-              ? `«${g.adultText}» выше ${D.RAISE_BAR * 100}% две недели подряд. Можно усложнить цель или заменить её новой.`
-              : `«${g.adultText}» ниже ${D.SIMPLIFY_BAR * 100}% две недели подряд. Стоит упростить цель или разбить её на шаги.`}
+              ? t("ps.hintRaise", { goal: L(g.adultText), n: D.RAISE_BAR * 100 })
+              : t("ps.hintSimplify", { goal: L(g.adultText), n: D.SIMPLIFY_BAR * 100 })}
           </p>
         ))}
       </section>
 
       <section className="card">
-        <h2>Самопроверки за 2 недели</h2>
+        <h2>{t("ps.selfChecksTitle")}</h2>
         <p className="num">
-          Всего {checks.length}, «занимаюсь заданием» {checks.filter((c) => c.onTask).length}
-          {checks.length ? ` (${Math.round((checks.filter((c) => c.onTask).length / checks.length) * 100)}%)` : ""}.
+          {checks.length
+            ? t("ps.selfChecksPct", { n: checks.length, on: checks.filter((c) => c.onTask).length, p: Math.round((checks.filter((c) => c.onTask).length / checks.length) * 100) })
+            : t("ps.selfChecks", { n: 0, on: 0 })}
         </p>
       </section>
 
       {canEdit ? (
         <section className="card">
-          <h2>Редактор плана</h2>
-          <p className="muted small">Новая версия уходит родителю на согласование. Уже поставленные отметки не меняются.</p>
+          <h2>{t("ps.editor")}</h2>
+          <p className="muted small">{t("ps.editorHint")}</p>
           <PlanEditor
             studentId={id}
-            techniques={techniques.map((t) => ({ id: t.id, title: t.title, evidence: t.evidence }))}
+            techniques={techniques.map((tq) => ({ id: tq.id, title: L(tq.title), evidence: tq.evidence }))}
             initial={{
               thresholdPct: base?.thresholdPct ?? 70,
               workMinutes: base?.workMinutes ?? 10,
               breakMinutes: base?.breakMinutes ?? 3,
-              goals: base?.goals.map((g) => ({ adultText: g.adultText, childText: g.childText, place: g.place, lineageId: g.lineageId })) ?? [{ adultText: "", childText: "", place: "SCHOOL", lineageId: null }],
-              techniqueIds: base?.techniques.map((t) => t.id) ?? [],
+              goals: base?.goals.map((g) => ({ adultText: L(g.adultText), childText: L(g.childText), place: g.place, lineageId: g.lineageId })) ?? [{ adultText: "", childText: "", place: "SCHOOL", lineageId: null }],
+              techniqueIds: base?.techniques.map((tq) => tq.id) ?? [],
             }}
           />
         </section>
       ) : (
-        <section className="card warn"><p>Редактировать план можно после согласия родителя на обработку данных.</p></section>
+        <section className="card warn"><p>{t("ps.editBlocked")}</p></section>
       )}
 
       <section className="card">
-        <h2>Версии плана</h2>
+        <h2>{t("ps.versions")}</h2>
         <div className="table-wrap">
           <table className="data">
-            <thead><tr><th>Версия</th><th>Статус</th><th>Действует с</th><th>Целей</th></tr></thead>
+            <thead><tr><th>{t("ps.col.version")}</th><th>{t("ps.col.status")}</th><th>{t("ps.col.from")}</th><th>{t("ps.col.goals")}</th></tr></thead>
             <tbody>
               {plans.map((p) => (
                 <tr key={p.id}>
                   <td className="num">{p.version}</td>
-                  <td>{STATUS[p.status]}</td>
-                  <td>{p.effectiveFrom ? D.formatRuDate(p.effectiveFrom) : "—"}</td>
+                  <td>{t(`ps.status.${p.status}`)}</td>
+                  <td>{p.effectiveFrom ? D.formatDate(p.effectiveFrom, lang) : "—"}</td>
                   <td className="num">{p.goals.length}</td>
                 </tr>
               ))}

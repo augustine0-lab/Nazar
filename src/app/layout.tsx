@@ -7,18 +7,24 @@ import "@fontsource/golos-text/700.css";
 import "@fontsource/unbounded/500.css";
 import "@fontsource/unbounded/700.css";
 import "./globals.css";
+import { I18nProvider } from "@/lib/i18n/client";
+import { dictionary } from "@/lib/i18n";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Nazar",
-  description: "Платформа поддержки школьников с трудностями внимания: учитель, родитель, психолог и ученик работают по одному плану.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("app.name"), description: t("app.description") };
+}
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLang();
   return (
-    <html lang="ru">
-      <body>{children}</body>
+    <html lang={lang}>
+      <body>
+        <I18nProvider lang={lang} messages={dictionary(lang)}>{children}</I18nProvider>
+      </body>
     </html>
   );
 }

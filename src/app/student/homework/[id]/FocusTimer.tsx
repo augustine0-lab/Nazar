@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { selfCheckAction } from "@/app/actions";
 import { selfCheckAt, timerState } from "@/lib/domain";
+import { useI18n } from "@/lib/i18n/client";
 
 const CIRC = 2 * Math.PI * 60;
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 /** Work/break timer derived from the start time; asks one self-check question per work block. */
 export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { studentId: string; homeworkId: string; workMin: number; breakMin: number }) {
+  const { t } = useI18n();
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [pausedElapsed, setPausedElapsed] = useState(0);
   const [now, setNow] = useState(() => Date.now());
@@ -51,7 +53,7 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
     setAsk(false);
     const res = await selfCheckAction(studentId, homeworkId, onTask);
     if ("error" in res) setMessage(res.error);
-    else setMessage(onTask ? (res.starAwarded ? "Молодец! +1 звезда за самоконтроль." : "Молодец! Ты хорошо следишь за собой.") : "Ничего страшного. Вернись к текущему шагу.");
+    else setMessage(onTask ? (res.starAwarded ? t("tm.starAwarded") : t("tm.good")) : t("tm.fine"));
   }
 
   return (
@@ -60,21 +62,21 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
         <circle className="track" cx="74" cy="74" r="60" />
         <circle className="prog" cx="74" cy="74" r="60" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - st.remainingSec / total)} />
         <text x="74" y="80" textAnchor="middle">{fmt(st.remainingSec)}</text>
-        <text x="74" y="100" textAnchor="middle" className="lbl">{st.phase === "WORK" ? "работаю" : "перерыв"}</text>
+        <text x="74" y="100" textAnchor="middle" className="lbl">{st.phase === "WORK" ? t("tm.working") : t("tm.break")}</text>
       </svg>
       <div className="stack" style={{ minWidth: 0 }}>
-        <p className="sr-only" aria-live="polite">{st.phase === "WORK" ? "Время работать" : "Перерыв"}</p>
+        <p className="sr-only" aria-live="polite">{st.phase === "WORK" ? t("tm.timeWork") : t("tm.breakSr")}</p>
         <div className="row">
-          <button className="btn primary" type="button" onClick={toggle}>{running ? "Пауза" : elapsed > 0 ? "Продолжить" : "Начать"}</button>
-          <button className="btn" type="button" onClick={() => { setStartedAt(null); setPausedElapsed(0); setAsk(false); }}>Сначала</button>
+          <button className="btn primary" type="button" onClick={toggle}>{running ? t("tm.pause") : elapsed > 0 ? t("tm.resume") : t("tm.start")}</button>
+          <button className="btn" type="button" onClick={() => { setStartedAt(null); setPausedElapsed(0); setAsk(false); }}>{t("tm.reset")}</button>
         </div>
-        <p className="muted small">{workMin} минут работы, потом {breakMin} минуты перерыв. В перерыв можно встать и потянуться.</p>
+        <p className="muted small">{t("tm.hint", { work: workMin, brk: breakMin })}</p>
         {ask && (
-          <div className="check-in" role="alertdialog" aria-label="Самопроверка">
-            <b>Я сейчас занимаюсь заданием?</b>
+          <div className="check-in" role="alertdialog" aria-label={t("tm.checkAria")}>
+            <b>{t("tm.question")}</b>
             <div className="row">
-              <button className="btn primary" type="button" onClick={() => answer(true)}>Да</button>
-              <button className="btn" type="button" onClick={() => answer(false)}>Отвлёкся</button>
+              <button className="btn primary" type="button" onClick={() => answer(true)}>{t("common.yes")}</button>
+              <button className="btn" type="button" onClick={() => answer(false)}>{t("tm.distracted")}</button>
             </div>
           </div>
         )}

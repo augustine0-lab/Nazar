@@ -9,11 +9,11 @@ import { can } from "@/lib/access";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
-
-const EVIDENCE_LABEL = { STRONG: "сильные данные", MODERATE: "средние данные", PRACTICE: "практика" } as const;
+import { getT } from "@/lib/i18n/server";
 
 export default async function TeacherStudent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ date?: string }> }) {
   const user = await requireUser("TEACHER");
+  const { lang, t, L } = await getT();
   const { id } = await params;
   const db = getDb();
   if (!(await can(db, user, "VIEW", id))) notFound();
@@ -32,37 +32,37 @@ export default async function TeacherStudent({ params, searchParams }: { params:
     <Shell current="/teacher">
       <div className="row between">
         <div className="stack" style={{ gap: 2 }}>
-          <Link href="/teacher" className="small">← Мой класс</Link>
+          <Link href="/teacher" className="small">← {t("nav.myClass")}</Link>
           <h1>{student.displayName}</h1>
           <span className="muted">{cls.name}</span>
         </div>
-        <nav className="row" aria-label="День">
+        <nav className="row" aria-label={t("tc.dayNav")}>
           <Link className="btn" href={`/teacher/student/${id}?date=${prev}`} aria-current={date === prev ? "page" : undefined}>
-            {D.shortWeekday(prev)}, {D.formatRuDate(prev)}
+            {D.shortWeekday(prev, lang)}, {D.formatDate(prev, lang)}
           </Link>
           <Link className="btn" href={`/teacher/student/${id}`} aria-current={date === today ? "page" : undefined}>
-            {D.shortWeekday(today)}, {D.formatRuDate(today)}
+            {D.shortWeekday(today, lang)}, {D.formatDate(today, lang)}
           </Link>
         </nav>
       </div>
 
       {!canMark ? (
         <section className="card warn">
-          <h2>Отметки недоступны</h2>
-          <p>Родитель ещё не дал согласие на обработку данных ребёнка. Без согласия платформа не собирает наблюдения.</p>
+          <h2>{t("tc.unavailable")}</h2>
+          <p>{t("tc.unavailableBody")}</p>
         </section>
       ) : !schoolGoals.length ? (
         <section className="card warn">
-          <h2>Нет согласованного плана</h2>
-          <p>Психолог готовит план поддержки, отметки появятся после согласования с родителем.</p>
+          <h2>{t("tc.noPlan")}</h2>
+          <p>{t("tc.noPlanBody")}</p>
         </section>
       ) : (
         <>
           <section className="card">
             <div className="row between">
-              <span className="eyebrow">Карточка поведения</span>
+              <span className="eyebrow">{t("tc.card")}</span>
               <span className="muted small num">
-                {sum.tally.ratio === null ? "отметок пока нет" : `${D.pct(sum.tally.ratio)}% целей, порог ${sum.plan!.thresholdPct}%`}
+                {sum.tally.ratio === null ? t("tc.noMarks") : t("tc.pctGoals", { pct: D.pct(sum.tally.ratio) ?? 0, th: sum.plan!.thresholdPct })}
               </span>
             </div>
             <MarkGrid
@@ -70,27 +70,27 @@ export default async function TeacherStudent({ params, searchParams }: { params:
               studentId={id}
               date={date}
               bell={school.bellSchedule}
-              goals={schoolGoals.map((g) => ({ id: g.id, text: g.adultText }))}
+              goals={schoolGoals.map((g) => ({ id: g.id, text: L(g.adultText) }))}
               initialMarks={sum.marks.filter((m) => m.lessonNo > 0).map((m) => ({ goalId: m.goalId, lessonNo: m.lessonNo, value: m.value }))}
               initialLesson={lesson}
             />
-            <p className="muted small">«—» значит, что цель не подходит к этому уроку или ребёнка не было. Такие уроки не входят в процент.</p>
+            <p className="muted small">{t("tc.naHint")}</p>
           </section>
 
           <section className="card">
-            <h2>Итог дня для родителя</h2>
+            <h2>{t("tc.noteTitle")}</h2>
             <ActionForm action={saveNoteAction} className="stack">
               <input type="hidden" name="studentId" value={id} />
               <input type="hidden" name="date" value={date} />
               <label>
-                Заметка (что получилось, что было трудно)
-                <textarea name="text" id="note" rows={3} defaultValue={myNote?.note.text ?? ""} maxLength={1000} placeholder="Например: сегодня хорошо работал в паре на математике" />
+                {t("tc.noteLabel")}
+                <textarea name="text" id="note" rows={3} defaultValue={myNote ? L(myNote.note.text) : ""} maxLength={1000} placeholder={t("tc.notePlaceholder")} />
               </label>
               <div className="row">
-                <button className="btn" name="intent" value="save" type="submit">Сохранить заметку</button>
-                <button className="btn primary" name="intent" value="close" type="submit">Закрыть день</button>
+                <button className="btn" name="intent" value="save" type="submit">{t("tc.saveNote")}</button>
+                <button className="btn primary" name="intent" value="close" type="submit">{t("tc.closeDay")}</button>
                 <span className="muted small">
-                  {sum.closed ? "День закрыт, родитель видит итог." : `Незакрытый день закроется сам в ${D.DAY_AUTO_CLOSE_HOUR}:00.`}
+                  {sum.closed ? t("tc.dayClosed") : t("tc.autoClose", { h: D.DAY_AUTO_CLOSE_HOUR })}
                 </span>
               </div>
             </ActionForm>
@@ -100,12 +100,12 @@ export default async function TeacherStudent({ params, searchParams }: { params:
 
       {sum.plan && sum.plan.techniques.length > 0 && (
         <section className="card">
-          <h2>Приёмы из плана</h2>
+          <h2>{t("tc.planTechniques")}</h2>
           <div className="list">
-            {sum.plan.techniques.map((t) => (
-              <div key={t.id} className="stack" style={{ gap: 4 }}>
-                <span className="row"><b>{t.title}</b><span className={`pill ${t.evidence === "STRONG" ? "good" : t.evidence === "MODERATE" ? "star" : ""}`}>{EVIDENCE_LABEL[t.evidence]}</span></span>
-                <span className="muted small">{t.body}</span>
+            {sum.plan.techniques.map((tq) => (
+              <div key={tq.id} className="stack" style={{ gap: 4 }}>
+                <span className="row"><b>{L(tq.title)}</b><span className={`pill ${tq.evidence === "STRONG" ? "good" : tq.evidence === "MODERATE" ? "star" : ""}`}>{t(`ev.${tq.evidence}`)}</span></span>
+                <span className="muted small">{L(tq.body)}</span>
               </div>
             ))}
           </div>

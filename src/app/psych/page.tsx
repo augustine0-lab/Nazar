@@ -5,9 +5,11 @@ import { hasActiveConsent } from "@/lib/access";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
+import { getT } from "@/lib/i18n/server";
 
 export default async function PsychHome() {
   const user = await requireUser("PSYCHOLOGIST");
+  const { t, L } = await getT();
   const db = getDb();
   const kids = await S.studentsForActor(db, user);
   const rows = await Promise.all(
@@ -25,7 +27,7 @@ export default async function PsychHome() {
   );
   return (
     <Shell current="/psych">
-      <h1>Мои дети</h1>
+      <h1>{t("nav.myKids")}</h1>
       <section className="card">
         <div className="list">
           {rows.map((r) => (
@@ -35,15 +37,15 @@ export default async function PsychHome() {
                 <span className="muted small">{r.className}</span>
                 {r.hints.map(({ g, s }) => (
                   <span key={g.id} className="small" style={{ color: "var(--star)" }}>
-                    {s === "RAISE" ? "Можно усложнить" : "Стоит упростить"}: «{g.adultText}»
+                    {s === "RAISE" ? t("ps.raise") : t("ps.simplify")}: «{L(g.adultText)}»
                   </span>
                 ))}
               </span>
               <span className="row">
-                {!r.consent && <span className="pill star">нет согласия</span>}
-                {r.pending && <span className="pill">план ждёт родителя</span>}
-                {r.thisWeek !== null && <span className="pill num">эта неделя {r.thisWeek}%</span>}
-                {r.lastWeek !== null && <span className="pill num">прошлая {r.lastWeek}%</span>}
+                {!r.consent && <span className="pill star">{t("ps.noConsent")}</span>}
+                {r.pending && <span className="pill">{t("ps.pendingParent")}</span>}
+                {r.thisWeek !== null && <span className="pill num">{t("ps.thisWeek", { n: r.thisWeek })}</span>}
+                {r.lastWeek !== null && <span className="pill num">{t("ps.lastWeek", { n: r.lastWeek })}</span>}
               </span>
             </Link>
           ))}

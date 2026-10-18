@@ -5,9 +5,11 @@ import { getDb } from "@/db";
 import { myStudent } from "@/lib/me";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
+import { getT } from "@/lib/i18n/server";
 
 export default async function StudentRewards() {
   const user = await requireUser("STUDENT");
+  const { t, L } = await getT();
   const db = getDb();
   const me = await myStudent(db, user);
   const [st, list, reqs] = await Promise.all([S.stars(db, me.id), S.rewardsOf(db, me.id), S.rewardRequestsOf(db, me.id)]);
@@ -16,28 +18,28 @@ export default async function StudentRewards() {
     <Shell current="/student/rewards">
       <div className="child stack">
         <div className="row between">
-          <h1>Награды</h1>
-          <span>У тебя <b className="num" style={{ color: "var(--star)" }}>★ {st.balance}</b></span>
+          <h1>{t("nav.rewards")}</h1>
+          <span>{t("st.has")} <b className="num" style={{ color: "var(--star)" }}>★ {st.balance}</b></span>
         </div>
         <section className="card">
           <div className="list">
             {list.map((r) => (
               <div key={r.id} className="row between">
-                <span><b>{r.title}</b> <span className="pill star">★ {r.cost}</span></span>
+                <span><b>{L(r.title)}</b> <span className="pill star">★ {r.cost}</span></span>
                 {pendingIds.has(r.id) ? (
-                  <span className="pill good">ждём ответа</span>
+                  <span className="pill good">{t("st.waiting")}</span>
                 ) : (
                   <ActionForm action={requestRewardAction} className="row">
                     <input type="hidden" name="studentId" value={me.id} />
                     <input type="hidden" name="rewardId" value={r.id} />
                     <button className="btn primary" type="submit" disabled={st.balance < r.cost}>
-                      {st.balance < r.cost ? `Ещё ${r.cost - st.balance} ★` : "Хочу эту награду"}
+                      {st.balance < r.cost ? t("st.need", { n: r.cost - st.balance }) : t("st.want")}
                     </button>
                   </ActionForm>
                 )}
               </div>
             ))}
-            {!list.length && <p className="muted">Мама или папа скоро добавят награды.</p>}
+            {!list.length && <p className="muted">{t("st.noRewards")}</p>}
           </div>
         </section>
       </div>

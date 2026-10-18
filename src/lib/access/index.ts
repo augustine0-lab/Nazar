@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { DB } from "@/db";
+import { translate } from "@/lib/i18n";
 import { classGroups, consents, guardianships, psychAssignments, students, type Role } from "@/db/schema";
 
 export interface Actor {
@@ -9,8 +10,8 @@ export interface Actor {
 }
 
 export class AccessDenied extends Error {
-  constructor(message = "Нет доступа к этим данным.") {
-    super(message);
+  constructor() {
+    super(translate("ru", "access.denied"));
   }
 }
 

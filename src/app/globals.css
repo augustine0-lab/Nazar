@@ -163,3 +163,8 @@ table.data th { color: var(--muted); font-weight: 600; border-top: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; flex: none; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-size: 0.95rem; max-width: calc(100% - 32px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 20; }
 .toast[data-shown="false"] { display: none; }
+
+/* language switch: two small buttons side by side */
+.seg.lang form { display: contents; }
+.seg.lang button { min-width: 44px; padding: 6px 10px; min-height: 36px; font-size: 0.85rem; }
+.seg.lang button[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); }

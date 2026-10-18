@@ -2,6 +2,7 @@
 // with the access check and the audit record next to the change itself.
 import { and, asc, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import type { DB } from "@/db";
+import { translate, type Msg, type MsgKey, type Params } from "@/lib/i18n";
 import {
   auditLog,
   classGroups,
@@ -29,7 +30,13 @@ import { AccessDenied, assertCan, can, type Actor } from "./access";
 import * as D from "./domain";
 import { hashPassword, isPin } from "./password";
 
-export class UserError extends Error {}
+/** Carries messages by key so the action layer can show them in the reader's language. */
+export class UserError extends Error {
+  constructor(public readonly msgs: Msg[]) {
+    super(msgs.map((m) => translate("ru", m.key, m.params)).join(" "));
+  }
+}
+const userError = (key: MsgKey, params?: Params) => new UserError([{ key, params }]);
 
 export const CONSENT_TEXT_VERSION = "2026-10";
 export const PURGE_AFTER_DAYS = 30;
@@ -50,7 +57,7 @@ export async function getStudent(db: DB, studentId: string) {
     .innerJoin(classGroups, eq(classGroups.id, students.classId))
     .innerJoin(schools, eq(schools.id, classGroups.schoolId))
     .where(eq(students.id, studentId));
-  if (!row) throw new UserError("Ученик не найден.");
+  if (!row) throw userError("err.studentNotFound");
   return row;
 }
 
@@ -242,18 +249,18 @@ export async function setMark(
   const { studentId, goalId, date, lessonNo, value } = input;
   const plan = await planFor(db, studentId, date);
   const goal = plan?.goals.find((g) => g.id === goalId);
-  if (!plan || !goal) throw new UserError("Эта цель не входит в план на этот день.");
+  if (!plan || !goal) throw userError("err.goalNotInPlan");
 
   if (goal.place === "SCHOOL") {
     await assertCan(db, actor, "MARK", studentId);
     const { school } = await getStudent(db, studentId);
-    if (lessonNo < 1 || lessonNo > school.bellSchedule.length) throw new UserError("Нет такого урока.");
+    if (lessonNo < 1 || lessonNo > school.bellSchedule.length) throw userError("err.noSuchLesson");
   } else {
     await assertCan(db, actor, "AWARD_HOME_GOAL", studentId);
-    if (lessonNo !== 0) throw new UserError("Домашние цели отмечаются один раз в день.");
+    if (lessonNo !== 0) throw userError("err.homeGoalOnce");
   }
-  if (!D.isSchoolDay(date)) throw new UserError("Отметки ставятся только в учебные дни.");
-  if (!D.canEditMarksFor(date, today())) throw new UserError("Отметку можно изменить только сегодня или за предыдущий учебный день.");
+  if (!D.isSchoolDay(date)) throw userError("err.schoolDaysOnly");
+  if (!D.canEditMarksFor(date, today())) throw userError("err.marksWindow");
 
   const where = and(eq(marks.studentId, studentId), eq(marks.date, date), eq(marks.lessonNo, lessonNo), eq(marks.goalId, goalId));
   if (value === null) {
@@ -286,8 +293,8 @@ export async function saveDayNote(db: DB, actor: Actor, input: { studentId: stri
 export async function saveReward(db: DB, actor: Actor, input: { studentId: string; rewardId?: string; title: string; cost: number; active: boolean }) {
   await assertCan(db, actor, "MANAGE_REWARDS", input.studentId);
   const title = input.title.trim();
-  if (!title) throw new UserError("Напишите, что это за награда.");
-  if (!Number.isInteger(input.cost) || input.cost < 1 || input.cost > 50) throw new UserError("Цена награды: от 1 до 50 звёзд.");
+  if (!title) throw userError("err.rewardName");
+  if (!Number.isInteger(input.cost) || input.cost < 1 || input.cost > 50) throw userError("err.rewardCost");
   if (input.rewardId) {
     db.update(rewards)
       .set({ title, cost: input.cost, active: input.active })
@@ -302,13 +309,13 @@ export async function saveReward(db: DB, actor: Actor, input: { studentId: strin
 export async function requestReward(db: DB, actor: Actor, input: { studentId: string; rewardId: string }) {
   await assertCan(db, actor, "REQUEST_REWARD", input.studentId);
   const reward = await db.query.rewards.findFirst({ where: and(eq(rewards.id, input.rewardId), eq(rewards.studentId, input.studentId), eq(rewards.active, true)) });
-  if (!reward) throw new UserError("Такой награды нет.");
+  if (!reward) throw userError("err.noReward");
   const { balance } = await stars(db, input.studentId);
-  if (!D.canRequestReward(balance, reward.cost)) throw new UserError("Пока не хватает звёзд.");
+  if (!D.canRequestReward(balance, reward.cost)) throw userError("err.notEnoughStars");
   const pending = await db.query.rewardRequests.findFirst({
     where: and(eq(rewardRequests.rewardId, reward.id), eq(rewardRequests.status, "PENDING")),
   });
-  if (pending) throw new UserError("Ты уже попросил эту награду. Ждём ответа.");
+  if (pending) throw userError("err.alreadyRequested");
   db.insert(rewardRequests).values({ rewardId: reward.id, studentId: input.studentId, status: "PENDING" }).run();
   audit(db, actor, "reward.request", input.studentId, { rewardId: reward.id });
 }
@@ -317,9 +324,9 @@ export async function requestReward(db: DB, actor: Actor, input: { studentId: st
 export async function grantReward(db: DB, actor: Actor, input: { studentId: string; rewardId: string; requestId?: string }) {
   await assertCan(db, actor, "MANAGE_REWARDS", input.studentId);
   const reward = await db.query.rewards.findFirst({ where: and(eq(rewards.id, input.rewardId), eq(rewards.studentId, input.studentId)) });
-  if (!reward) throw new UserError("Такой награды нет.");
+  if (!reward) throw userError("err.noReward");
   const { balance } = await stars(db, input.studentId);
-  if (balance < reward.cost) throw new UserError(`Не хватает звёзд: есть ${balance}, нужно ${reward.cost}.`);
+  if (balance < reward.cost) throw userError("err.balanceShort", { have: balance, need: reward.cost });
   const decided = { status: "GRANTED" as const, costAtGrant: reward.cost, decidedById: actor.id, decidedAt: new Date() };
   if (input.requestId) {
     db.update(rewardRequests)
@@ -352,10 +359,10 @@ export async function createHomework(
 ) {
   await assertCan(db, actor, "CREATE_HOMEWORK", input.studentId);
   const steps = input.steps.map((s) => s.trim()).filter(Boolean);
-  if (!input.subject.trim() || !input.title.trim()) throw new UserError("Укажите предмет и задание.");
-  if (!steps.length) throw new UserError("Добавьте хотя бы один шаг.");
-  if (steps.length > MAX_STEPS) throw new UserError(`Шагов может быть не больше ${MAX_STEPS}.`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) throw new UserError("Укажите срок.");
+  if (!input.subject.trim() || !input.title.trim()) throw userError("err.hwFields");
+  if (!steps.length) throw userError("err.hwSteps");
+  if (steps.length > MAX_STEPS) throw userError("err.hwMaxSteps", { max: MAX_STEPS });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) throw userError("err.hwDue");
   const id = crypto.randomUUID();
   db.transaction((tx) => {
     tx.insert(homework).values({ id, studentId: input.studentId, subject: input.subject.trim(), title: input.title.trim(), dueDate: input.dueDate, authorId: actor.id }).run();
@@ -371,7 +378,7 @@ export async function setStepDone(db: DB, actor: Actor, input: { stepId: string;
     .from(homeworkSteps)
     .innerJoin(homework, eq(homework.id, homeworkSteps.homeworkId))
     .where(eq(homeworkSteps.id, input.stepId));
-  if (!row) throw new UserError("Шаг не найден.");
+  if (!row) throw userError("err.stepNotFound");
   await assertCan(db, actor, "DO_HOMEWORK", row.hw.studentId);
   db.update(homeworkSteps).set({ doneAt: input.done ? new Date() : null }).where(eq(homeworkSteps.id, input.stepId)).run();
 }
@@ -394,7 +401,7 @@ export async function submitPlan(
 ) {
   await assertCan(db, actor, "EDIT_PLAN", input.studentId);
   const errors = D.validatePlan(input);
-  if (errors.length) throw new UserError(errors.join(" "));
+  if (errors.length) throw new UserError(errors);
   const existing = await plansOf(db, input.studentId);
   const version = (existing[0]?.version ?? 0) + 1;
   const planId = crypto.randomUUID();
@@ -438,7 +445,7 @@ export async function approvePlan(db: DB, actor: Actor, input: { studentId: stri
   await assertCan(db, actor, "APPROVE_PLAN", input.studentId);
   const plans = await plansOf(db, input.studentId);
   const plan = plans.find((p) => p.id === input.planId && p.status === "PENDING");
-  if (!plan) throw new UserError("Этот план уже не ждёт согласования.");
+  if (!plan) throw userError("err.planNotPending");
   const t = today();
   const hasCurrent = Boolean(D.planForDate(plans, t));
   // A changed plan starts on the next school day so today's marks keep their meaning.
@@ -529,16 +536,16 @@ const LOGIN_RE = /^[a-z0-9._-]{3,32}$/;
 export async function createAdultUser(db: DB, actor: Actor, input: { login: string; name: string; role: Exclude<Role, "STUDENT">; password: string }) {
   assertAdmin(actor);
   const login = input.login.trim().toLowerCase();
-  if (!LOGIN_RE.test(login)) throw new UserError("Логин: 3–32 символа, латинские буквы, цифры, точка, дефис.");
-  if (input.password.length < 8) throw new UserError("Пароль должен быть не короче 8 символов.");
-  if (await db.query.users.findFirst({ where: eq(users.login, login) })) throw new UserError("Такой логин уже занят.");
+  if (!LOGIN_RE.test(login)) throw userError("err.loginFormat");
+  if (input.password.length < 8) throw userError("err.passwordShort");
+  if (await db.query.users.findFirst({ where: eq(users.login, login) })) throw userError("err.loginTaken");
   db.insert(users).values({ schoolId: actor.schoolId, login, name: input.name.trim(), role: input.role, passwordHash: hashPassword(input.password) }).run();
   audit(db, actor, "user.create", null, { login, role: input.role });
 }
 
 export async function createClass(db: DB, actor: Actor, input: { name: string; schoolYear: string; teacherId: string | null }) {
   assertAdmin(actor);
-  if (!input.name.trim()) throw new UserError("Укажите название класса.");
+  if (!input.name.trim()) throw userError("err.className");
   db.insert(classGroups).values({ schoolId: actor.schoolId, name: input.name.trim(), schoolYear: input.schoolYear, teacherId: input.teacherId }).run();
   audit(db, actor, "class.create", null, { name: input.name });
 }
@@ -546,9 +553,9 @@ export async function createClass(db: DB, actor: Actor, input: { name: string; s
 export async function createStudentAccount(db: DB, actor: Actor, input: { displayName: string; login: string; pin: string; classId: string; birthYear: number | null }) {
   assertAdmin(actor);
   const login = input.login.trim().toLowerCase();
-  if (!LOGIN_RE.test(login)) throw new UserError("Логин: 3–32 символа, латинские буквы, цифры, точка, дефис.");
-  if (!isPin(input.pin)) throw new UserError("PIN ребёнка: ровно 6 цифр.");
-  if (await db.query.users.findFirst({ where: eq(users.login, login) })) throw new UserError("Такой логин уже занят.");
+  if (!LOGIN_RE.test(login)) throw userError("err.loginFormat");
+  if (!isPin(input.pin)) throw userError("err.pin");
+  if (await db.query.users.findFirst({ where: eq(users.login, login) })) throw userError("err.loginTaken");
   const userId = crypto.randomUUID();
   db.transaction((tx) => {
     tx.insert(users).values({ id: userId, schoolId: actor.schoolId, login, name: input.displayName.trim(), role: "STUDENT", passwordHash: hashPassword(input.pin) }).run();
@@ -572,9 +579,9 @@ export async function assignPsychologist(db: DB, actor: Actor, input: { psycholo
 export async function resetPassword(db: DB, actor: Actor, input: { userId: string; password: string }) {
   assertAdmin(actor);
   const target = await db.query.users.findFirst({ where: and(eq(users.id, input.userId), eq(users.schoolId, actor.schoolId)) });
-  if (!target) throw new UserError("Пользователь не найден.");
+  if (!target) throw userError("err.userNotFound");
   if (target.role === "STUDENT" ? !isPin(input.password) : input.password.length < 8)
-    throw new UserError(target.role === "STUDENT" ? "PIN ребёнка: ровно 6 цифр." : "Пароль должен быть не короче 8 символов.");
+    throw userError(target.role === "STUDENT" ? "err.pin" : "err.passwordShort");
   db.update(users).set({ passwordHash: hashPassword(input.password), failedLogins: 0, lockedUntil: null }).where(eq(users.id, target.id)).run();
   audit(db, actor, "user.reset_password", null, { userId: target.id });
 }

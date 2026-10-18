@@ -1,9 +1,10 @@
-import { formatRuDate } from "@/lib/domain";
+import { formatDate } from "@/lib/domain";
+import { getT } from "@/lib/i18n/server";
 
 const COLORS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
 
 /** Grouped bars: share of lessons with the goal met, per week, with the plan threshold as a dashed line. */
-export function GoalChart({
+export async function GoalChart({
   goals,
   weeks,
   threshold,
@@ -12,6 +13,7 @@ export function GoalChart({
   weeks: { monday: string; ratios: (number | null)[] }[];
   threshold: number;
 }) {
+  const { lang, t } = await getT();
   const W = 640, H = 240, L = 36, R = 8, T = 14, B = 30;
   const plotH = H - T - B;
   const groupW = (W - L - R) / Math.max(weeks.length, 1);
@@ -20,7 +22,7 @@ export function GoalChart({
   return (
     <>
       <div className="chart-wrap">
-        <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Доля уроков с выполненной целью по неделям">
+        <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("chart.aria")}>
           {[0, 25, 50, 75, 100].map((v) => (
             <g key={v}>
               <line className="grid" x1={L} x2={W - R} y1={y(v)} y2={y(v)} strokeWidth="1" />
@@ -28,7 +30,7 @@ export function GoalChart({
             </g>
           ))}
           <line x1={L} x2={W - R} y1={y(threshold)} y2={y(threshold)} stroke="var(--bad)" strokeDasharray="4 4" strokeWidth="1.5" />
-          <text x={L + 4} y={y(threshold) - 5} style={{ fill: "var(--bad)", stroke: "var(--surface)", strokeWidth: 4, paintOrder: "stroke" }}>порог {threshold}%</text>
+          <text x={L + 4} y={y(threshold) - 5} style={{ fill: "var(--bad)", stroke: "var(--surface)", strokeWidth: 4, paintOrder: "stroke" }}>{t("chart.threshold", { n: threshold })}</text>
           {weeks.map((w, i) => {
             const gx = L + i * groupW + (groupW - goals.length * (bw + 3)) / 2;
             return (
@@ -43,7 +45,7 @@ export function GoalChart({
                   );
                 })}
                 <text x={L + i * groupW + groupW / 2} y={H - 10} textAnchor="middle">
-                  {i === weeks.length - 1 ? "эта неделя" : `с ${formatRuDate(w.monday)}`}
+                  {i === weeks.length - 1 ? t("chart.thisWeek") : t("chart.weekFrom", { date: formatDate(w.monday, lang) })}
                 </text>
               </g>
             );
