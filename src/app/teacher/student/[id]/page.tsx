@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
 import { MarkGrid } from "./MarkGrid";
+import { NoteField } from "@/components/NoteField";
 import { saveNoteAction } from "@/app/actions";
 import { getDb } from "@/db";
 import { can } from "@/lib/access";
@@ -82,10 +83,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
             <ActionForm action={saveNoteAction} className="stack">
               <input type="hidden" name="studentId" value={id} />
               <input type="hidden" name="date" value={date} />
-              <label>
-                {t("tc.noteLabel")}
-                <textarea name="text" id="note" rows={3} defaultValue={myNote ? L(myNote.note.text) : ""} maxLength={1000} placeholder={t("tc.notePlaceholder")} />
-              </label>
+              <NoteField name="text" id="note" defaultValue={myNote ? L(myNote.note.text) : ""} maxLength={1000} placeholder={t("tc.notePlaceholder")} label={t("tc.noteLabel")} />
               <div className="row">
                 <button className="btn" name="intent" value="save" type="submit">{t("tc.saveNote")}</button>
                 <button className="btn primary" name="intent" value="close" type="submit">{t("tc.closeDay")}</button>
@@ -97,6 +95,14 @@ export default async function TeacherStudent({ params, searchParams }: { params:
           </section>
         </>
       )}
+
+      <section className="card">
+        <div className="row">
+          <Link className="btn" href={`/chat/${id}`}>{t("chat.open")}</Link>
+          <Link className="btn" href={`/scale/${id}`}>{t("sc.link")}</Link>
+        </div>
+        <p className="muted small">{t("sc.linkHint")}</p>
+      </section>
 
       {sum.plan && sum.plan.techniques.length > 0 && (
         <section className="card">

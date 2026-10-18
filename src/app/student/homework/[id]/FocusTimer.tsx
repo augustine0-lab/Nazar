@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { selfCheckAction } from "@/app/actions";
-import { selfCheckAt, timerState } from "@/lib/domain";
+import { exerciseForCycle, selfCheckAt, timerState } from "@/lib/domain";
+import { BREAK_EMOJI } from "@/lib/icons";
 import { useI18n } from "@/lib/i18n/client";
 
 const CIRC = 2 * Math.PI * 60;
@@ -71,6 +72,12 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
           <button className="btn" type="button" onClick={() => { setStartedAt(null); setPausedElapsed(0); setAsk(false); }}>{t("tm.reset")}</button>
         </div>
         <p className="muted small">{t("tm.hint", { work: workMin, brk: breakMin })}</p>
+        {running && st.phase === "BREAK" && (
+          <div className="movebreak" role="status">
+            <b><span aria-hidden="true">{BREAK_EMOJI[exerciseForCycle(st.cycle)]}</span> {t("mv.title")}</b>
+            <span>{t(`mv.${exerciseForCycle(st.cycle)}`)}</span>
+          </div>
+        )}
         {ask && (
           <div className="check-in" role="alertdialog" aria-label={t("tm.checkAria")}>
             <b>{t("tm.question")}</b>

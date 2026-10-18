@@ -2,6 +2,11 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { StarRow } from "@/components/Stars";
 import { HomeworkForm } from "@/components/HomeworkForm";
+import { MoodPicker } from "@/components/MoodPicker";
+import { PetCard } from "@/components/PetCard";
+import { ScheduleList } from "@/components/ScheduleList";
+import { SpeakButton } from "@/components/SpeakButton";
+import * as F from "@/lib/feature-services";
 import { getDb } from "@/db";
 import { hasActiveConsent } from "@/lib/access";
 import { myStudent } from "@/lib/me";
@@ -23,7 +28,17 @@ export default async function StudentHome() {
     );
   }
   const day = S.workDay();
-  const [st, rewards, hw, plan] = await Promise.all([S.stars(db, me.id, day), S.rewardsOf(db, me.id), S.homeworkOf(db, me.id, S.today()), S.planFor(db, me.id, day)]);
+  const [st, rewards, hw, plan, sched, moods, pet] = await Promise.all([
+    S.stars(db, me.id, day),
+    S.rewardsOf(db, me.id),
+    S.homeworkOf(db, me.id, S.today()),
+    S.planFor(db, me.id, day),
+    F.scheduleForDay(db, me.id, S.today()),
+    F.moodsOf(db, me.id, S.today()),
+    F.petOf(db, me.id),
+  ]);
+  const moodSlot = S.nowLocal().hour < 12 ? "MORNING" : "AFTER_SCHOOL";
+  const moodNow = moods.find((m) => m.date === S.today() && m.slot === moodSlot)?.mood ?? null;
   const affordable = rewards.filter((r) => r.cost <= st.balance).at(-1);
   const next = rewards.find((r) => r.cost > st.balance);
   const lessonGoals = plan?.goals ?? [];
@@ -42,9 +57,28 @@ export default async function StudentHome() {
           </div>
         </section>
 
+        {(
+          <section className="card">
+            <h2>{t("sch.title")}</h2>
+            <ScheduleList
+              items={sched.items.map((i) => ({ id: i.id, time: i.time, title: i.title, icon: i.icon }))}
+              doneIds={[...sched.doneIds]}
+              interactive
+            />
+          </section>
+        )}
+
+        <section className="card">
+          <h2>{t("mood.title")}</h2>
+          <MoodPicker key={moodSlot} studentId={me.id} slot={moodSlot} initial={moodNow} />
+        </section>
+
         {lessonGoals.length > 0 && (
           <section className="card">
-            <h2>{t("st.myGoals")}</h2>
+            <div className="row between">
+              <h2>{t("st.myGoals")}</h2>
+              <SpeakButton text={lessonGoals.map((g) => L(g.childText)).join(". ")} />
+            </div>
             <ul className="stack" style={{ margin: 0, paddingLeft: 20 }}>
               {lessonGoals.map((g) => <li key={g.id}>{L(g.childText)}</li>)}
             </ul>
@@ -70,6 +104,8 @@ export default async function StudentHome() {
             <div style={{ marginTop: 12 }}><HomeworkForm studentId={me.id} defaultDue={D.nextSchoolDay(S.today())} /></div>
           </details>
         </section>
+
+        <PetCard studentId={me.id} info={pet} />
       </div>
     </Shell>
   );

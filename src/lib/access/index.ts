@@ -62,7 +62,15 @@ export type Permission =
   | "CREATE_HOMEWORK"
   | "DO_HOMEWORK"
   | "MANAGE_CONSENT"
-  | "AWARD_HOME_GOAL";
+  | "AWARD_HOME_GOAL"
+  | "MANAGE_SCHEDULE"
+  | "DO_SCHEDULE"
+  | "LOG_MOOD"
+  | "CHOOSE_PET"
+  | "CHAT"
+  | "FILL_SCALE"
+  | "VIEW_SCALES"
+  | "VIEW_REPORT";
 
 const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLOGIST">> = {
   VIEW: ["SELF", "TEACHER", "PARENT", "PSYCHOLOGIST"],
@@ -76,6 +84,14 @@ const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLO
   DO_HOMEWORK: ["SELF"],
   MANAGE_CONSENT: ["PARENT"],
   AWARD_HOME_GOAL: ["PARENT"],
+  MANAGE_SCHEDULE: ["PARENT", "PSYCHOLOGIST"],
+  DO_SCHEDULE: ["SELF"],
+  LOG_MOOD: ["SELF"],
+  CHOOSE_PET: ["SELF"],
+  CHAT: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
+  FILL_SCALE: ["TEACHER", "PARENT"],
+  VIEW_SCALES: ["PSYCHOLOGIST"],
+  VIEW_REPORT: ["PSYCHOLOGIST", "PARENT"],
 };
 
 // Without parental consent only the consent itself can be managed.

@@ -241,3 +241,119 @@ export const auditLog = sqliteTable(
   },
   (t) => [index("audit_student_idx").on(t.studentId)],
 );
+
+/* ---------- visual schedule, mood, pet ---------- */
+
+// Fixed set of pictograms; the keys are translated and drawn on screen.
+export const SCHEDULE_ICONS = ["wake", "wash", "eat", "dress", "bag", "school", "walk", "homework", "play", "read", "bath", "sleep"] as const;
+export type ScheduleIcon = (typeof SCHEDULE_ICONS)[number];
+
+export const scheduleItems = sqliteTable(
+  "schedule_items",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    // 1 = Monday … 7 = Sunday
+    weekday: integer("weekday").notNull(),
+    time: text("time").notNull(),
+    title: text("title").notNull(),
+    icon: text("icon", { enum: SCHEDULE_ICONS }).notNull(),
+    authorId: text("author_id").notNull().references(() => users.id),
+  },
+  (t) => [index("schedule_student_idx").on(t.studentId, t.weekday)],
+);
+
+export const scheduleDone = sqliteTable(
+  "schedule_done",
+  {
+    itemId: text("item_id").notNull().references(() => scheduleItems.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    doneAt: integer("done_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [primaryKey({ columns: [t.itemId, t.date] })],
+);
+
+export const MOOD_SLOTS = ["MORNING", "AFTER_SCHOOL"] as const;
+export type MoodSlot = (typeof MOOD_SLOTS)[number];
+
+export const moodChecks = sqliteTable(
+  "mood_checks",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    slot: text("slot", { enum: MOOD_SLOTS }).notNull(),
+    // 1 (very bad) … 5 (very good)
+    mood: integer("mood").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("mood_unique_idx").on(t.studentId, t.date, t.slot)],
+);
+
+export const PET_KINDS = ["fox", "cat", "owl", "dino"] as const;
+export type PetKind = (typeof PET_KINDS)[number];
+
+export const pets = sqliteTable("pets", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: PET_KINDS }).notNull(),
+  name: text("name").notNull(),
+});
+
+/* ---------- messages between adults, notifications ---------- */
+
+export const chatMessages = sqliteTable(
+  "chat_messages",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    authorId: text("author_id").notNull().references(() => users.id),
+    text: text("text").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("chat_student_idx").on(t.studentId, t.createdAt)],
+);
+
+export const chatReads = sqliteTable(
+  "chat_reads",
+  {
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    readAt: integer("read_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.studentId] })],
+);
+
+export const notifications = sqliteTable(
+  "notifications",
+  {
+    id: id(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    studentId: text("student_id").references(() => students.id, { onDelete: "cascade" }),
+    // Message key and parameters, translated when the reader opens it.
+    kind: text("kind").notNull(),
+    params: text("params", { mode: "json" }).$type<Record<string, string | number>>(),
+    href: text("href"),
+    createdAt: createdAt(),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+  },
+  (t) => [index("notifications_user_idx").on(t.userId, t.readAt)],
+);
+
+/* ---------- observation scales (teacher and parent) ---------- */
+
+export const SCALE_ROLES = ["TEACHER", "PARENT"] as const;
+
+export const scaleResponses = sqliteTable(
+  "scale_responses",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    respondentId: text("respondent_id").notNull().references(() => users.id),
+    respondentRole: text("respondent_role", { enum: SCALE_ROLES }).notNull(),
+    date: text("date").notNull(),
+    // 18 answers, each 0..3, in the order of SCALE_ITEMS
+    answers: text("answers", { mode: "json" }).$type<number[]>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("scale_student_idx").on(t.studentId, t.date)],
+);

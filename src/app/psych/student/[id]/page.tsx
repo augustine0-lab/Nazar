@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { GoalChart } from "@/components/GoalChart";
 import { PlanEditor } from "./PlanEditor";
+import { MoodStrip } from "@/components/MoodStrip";
+import { ScheduleEditor } from "@/components/ScheduleEditor";
+import * as F from "@/lib/feature-services";
 import { getDb } from "@/db";
 import { can } from "@/lib/access";
 import { requireUser } from "@/lib/session";
@@ -18,7 +21,10 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
   if (!(await can(db, user, "VIEW", id))) notFound();
   const { student, cls } = await S.getStudent(db, id);
   const canEdit = await can(db, user, "EDIT_PLAN", id);
-  const [series, plans, techniques, checks] = await Promise.all([
+  const [moods, scales, schedule, series, plans, techniques, checks] = await Promise.all([
+    F.moodsOf(db, id, D.addDays(S.today(), -6)),
+    F.scalesOf(db, user, id),
+    canEdit ? F.scheduleOf(db, id) : Promise.resolve([]),
     S.goalSeries(db, id, 6),
     S.plansOf(db, id),
     S.allTechniques(db),
@@ -51,6 +57,35 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
       </section>
 
       <section className="card">
+        <div className="row">
+          <Link className="btn" href={`/report/${id}`}>{t("rp.link")}</Link>
+          <Link className="btn" href={`/chat/${id}`}>{t("chat.open")}</Link>
+        </div>
+      </section>
+
+      <section className="card"><MoodStrip moods={moods} today={S.today()} /></section>
+
+      <section className="card">
+        <h2>{t("sc.results")}</h2>
+        {scales.length ? (
+          <div className="list">
+            {scales.map((sc) => (
+              <div key={sc.id} className="stack" style={{ gap: 4 }}>
+                <b>{t("sc.by", { name: L(sc.respondentName), role: t(`role.${sc.respondentRole}`), date: D.formatDate(sc.date, lang) })}</b>
+                <span className="num">{t("sc.score", { a: sc.score.inattention.sum, ac: sc.score.inattention.concerns, h: sc.score.hyperactivity.sum, hc: sc.score.hyperactivity.concerns })}</span>
+                <span className={`pill ${sc.score.inattention.flagged || sc.score.hyperactivity.flagged ? "star" : ""}`} style={{ alignSelf: "flex-start" }}>
+                  {sc.score.inattention.flagged || sc.score.hyperactivity.flagged ? t("sc.flag") : t("sc.noFlag")}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">{t("sc.none")}</p>
+        )}
+        <p className="muted small">{t("sc.disclaimer")}</p>
+      </section>
+
+      <section className="card">
         <h2>{t("ps.selfChecksTitle")}</h2>
         <p className="num">
           {checks.length
@@ -77,6 +112,15 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
         </section>
       ) : (
         <section className="card warn"><p>{t("ps.editBlocked")}</p></section>
+      )}
+
+      {canEdit && (
+        <section className="card">
+          <details>
+            <summary><h2 style={{ display: "inline" }}>{t("sch.editor")}</h2></summary>
+            <div style={{ marginTop: 12 }}><ScheduleEditor studentId={id} items={schedule} /></div>
+          </details>
+        </section>
       )}
 
       <section className="card">

@@ -74,7 +74,7 @@ test("wrong password shows a clear message", async ({ page }) => {
 
 /* ---------- Kazakh interface ---------- */
 
-const RUSSIAN_UI = /Мой класс|Мои дети|Мой день|Выйти|Награды|Домашка|Сегодня|Карточка поведения|Закрыть день|Динамика по неделям|Согласие на обработку/;
+const RUSSIAN_UI = /Итоги недели|Сообщения|Расписание дня|Как ты сейчас|Мой питомец|Мой класс|Мои дети|Мой день|Выйти|Награды|Домашка|Сегодня|Карточка поведения|Закрыть день|Динамика по неделям|Согласие на обработку/;
 
 test("the language switch changes the interface and the demo content follows", async ({ page }) => {
   await page.goto("/login");
@@ -118,10 +118,10 @@ test("Kazakh errors and messages", async ({ page }) => {
 });
 
 const SCREENS: Record<string, { login: string; password?: string; paths: string[]; follow?: string }> = {
-  teacher: { login: "aigul", paths: ["/teacher", "/techniques"], follow: "/teacher" },
-  parent: { login: "gulnar", paths: ["/parent", "/parent/rewards", "/parent/homework", "/parent/plan"] },
+  teacher: { login: "aigul", paths: ["/teacher", "/teacher/week", "/chat", "/notifications", "/techniques"], follow: "/teacher" },
+  parent: { login: "gulnar", paths: ["/parent", "/parent/schedule", "/parent/rewards", "/parent/homework", "/parent/plan", "/chat", "/notifications"] },
   student: { login: "miras", password: "123456", paths: ["/student", "/student/rewards"], follow: "/student" },
-  psychologist: { login: "saule", paths: ["/psych", "/techniques"], follow: "/psych" },
+  psychologist: { login: "saule", paths: ["/psych", "/chat", "/notifications", "/techniques"], follow: "/psych" },
   admin: { login: "admin", paths: ["/admin"] },
 };
 
@@ -152,3 +152,117 @@ for (const lang of ["kk", "ru"] as const) {
     });
   }
 }
+
+
+/* ---------- new features ---------- */
+
+test("the child ticks the schedule, notes the mood and picks a pet", async ({ page, browser }) => {
+  await login(page, "miras", "123456");
+  const items = page.locator(".sched-item");
+  const label = await items.filter({ has: page.locator(".tick:empty") }).first().getAttribute("aria-label");
+  const open = page.getByRole("button", { name: label! });
+  await open.click();
+  await expect(open).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(page.locator(".sched-item[aria-pressed=true]").first()).toBeVisible();
+
+  await page.getByRole("button", { name: /Хорошо/ }).click();
+  await expect(page.getByRole("button", { name: /Хорошо/ })).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(page.getByRole("button", { name: /Хорошо/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Рыжик растёт от твоих звёзд")).toBeVisible();
+
+  const other = await browser.newPage();
+  await login(other, "aliya", "123456");
+  await other.getByLabel("Совёнок").check({ force: true });
+  await other.getByLabel("Имя питомца").fill("Ақбота");
+  await other.getByRole("button", { name: "Забрать себе" }).click();
+  await expect(other.getByText("Ақбота растёт от твоих звёзд")).toBeVisible();
+});
+
+test("parent and teacher write to each other and see unread counts", async ({ browser }) => {
+  const parent = await browser.newPage();
+  await login(parent, "gulnar");
+  await parent.goto("/chat");
+  await parent.locator("a.list-link").first().click();
+  await parent.getByPlaceholder("Напишите сообщение").fill("Мы попробуем разминку дома, спасибо!");
+  await parent.getByRole("button", { name: "Отправить" }).click();
+  await expect(parent.getByText("Мы попробуем разминку дома, спасибо!")).toBeVisible();
+
+  const teacher = await browser.newPage();
+  await login(teacher, "aigul");
+  await expect(teacher.getByRole("link", { name: /Сообщения/ }).locator(".badge")).toBeVisible();
+  await teacher.getByRole("link", { name: /Сообщения/ }).click();
+  await teacher.getByRole("link", { name: /Мирас Сейітов/ }).click();
+  await expect(teacher.getByText("Мы попробуем разминку дома, спасибо!")).toBeVisible();
+  await expect(teacher.getByRole("link", { name: /Сообщения/ }).locator(".badge")).toHaveCount(0);
+});
+
+test("a child cannot open the adults' conversation or the report", async ({ page }) => {
+  await login(page, "miras", "123456");
+  await page.goto("/chat");
+  await expect(page).toHaveURL(/\/student$/);
+  await page.goto("/notifications");
+  await expect(page).toHaveURL(/\/student$/);
+});
+
+test("view settings change the page and are remembered", async ({ page }) => {
+  await login(page, "gulnar");
+  await page.getByText("Вид", { exact: false }).first().click();
+  await page.getByRole("button", { name: "Тёмная" }).click();
+  await page.getByRole("button", { name: "Крупный", exact: true }).click();
+  await page.getByLabel(/Удобное чтение/).check();
+  await page.getByLabel(/Спокойный режим/).check();
+  const html = page.locator("html");
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(html).toHaveAttribute("data-fs", "1");
+  await expect(html).toHaveAttribute("data-read", "1");
+  await expect(html).toHaveAttribute("data-calm", "1");
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(html).toHaveAttribute("data-fs", "1");
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(18, 26, 25)");
+});
+
+test("a parent fills the observation scale and the psychologist sees it", async ({ browser }) => {
+  const parent = await browser.newPage();
+  await login(parent, "erlan");
+  await parent.getByRole("link", { name: "Анкета наблюдения" }).click();
+  await parent.getByRole("button", { name: "Сохранить анкету" }).click();
+  // Native validation stops an empty form.
+  await expect(parent).toHaveURL(/\/scale\//);
+  const groups = await parent.locator("fieldset.scale-q").count();
+  expect(groups).toBe(18);
+  for (let i = 1; i <= 18; i++) await parent.locator("fieldset.scale-q").nth(i - 1).locator("label").nth(i % 4).click();
+  await parent.getByRole("button", { name: "Сохранить анкету" }).click();
+  await expect(parent.getByText("Анкета сохранена, психолог получил уведомление")).toBeVisible();
+
+  const psych = await browser.newPage();
+  await login(psych, "saule");
+  await psych.getByRole("link", { name: /Алия Қасымова/ }).click();
+  await expect(psych.getByRole("heading", { name: "Анкеты наблюдения" })).toBeVisible();
+  await expect(psych.getByText(/Ерлан Қасымов, родитель/)).toBeVisible();
+});
+
+test("the teacher's week review explains struggling goals and the report is printable", async ({ browser }) => {
+  const teacher = await browser.newPage();
+  await login(teacher, "aigul");
+  await teacher.getByRole("link", { name: "Итоги недели" }).click();
+  await expect(teacher.getByRole("heading", { name: "Итоги недели" })).toBeVisible();
+  await expect(teacher.getByText("Что можно попробовать:").first()).toBeVisible();
+
+  const psych = await browser.newPage();
+  await login(psych, "saule");
+  await psych.getByRole("link", { name: /Мирас Сейітов/ }).click();
+  await psych.getByRole("link", { name: "Сводка для печати или PDF" }).click();
+  await expect(psych.getByRole("heading", { name: /Сводка по ребёнку: Мирас Сейітов/ })).toBeVisible();
+  await expect(psych.getByRole("button", { name: /Распечатать или сохранить в PDF/ })).toBeVisible();
+  await expect(psych.getByText("не содержит диагноза")).toBeVisible();
+});
+
+test("the teacher can fill a note from ready phrases", async ({ page }) => {
+  await login(page, "aigul");
+  await page.getByRole("link", { name: /Мирас Сейітов/ }).click();
+  await page.getByRole("button", { name: "Хочу отметить старание на уроках." }).click();
+  await expect(page.locator("#note")).toHaveValue(/Хочу отметить старание на уроках\./);
+});

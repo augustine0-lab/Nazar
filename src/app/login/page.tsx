@@ -1,5 +1,7 @@
 import { ActionForm } from "@/components/ActionForm";
 import { LangSwitch } from "@/components/LangSwitch";
+import { A11yPanel } from "@/components/A11yPanel";
+import { getPrefs } from "@/lib/prefs-server";
 import { loginAction } from "@/app/actions";
 import { getT } from "@/lib/i18n/server";
 import type { MsgKey } from "@/lib/i18n";
@@ -18,6 +20,7 @@ const DEMO: [string, MsgKey][] = [
 
 export default async function LoginPage() {
   const { t } = await getT();
+  const prefs = await getPrefs();
   return (
     <main className="login">
       <div className="card">
@@ -25,6 +28,7 @@ export default async function LoginPage() {
           <h1>{t("app.name")}</h1>
           <LangSwitch />
         </div>
+        <div className="row"><A11yPanel initial={prefs} /></div>
         <p className="muted">{t("login.tagline")}</p>
         <ActionForm action={loginAction} className="stack">
           <label>

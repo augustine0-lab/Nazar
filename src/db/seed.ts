@@ -224,6 +224,8 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
   ["lang.s1", "lang.s2", "lang.s3", "lang.s4", "lang.s5"].map((k) => `@demo.hw.${k}`).forEach(
     (text, position) => db.insert(s.homeworkSteps).values({ homeworkId: hw2, text, position }).run(),
   );
+
+  seedExtras({ db, todayDate, demoDay, rand, ids: { aigul, gulnar, erlan, saule, miras, aliya, game } });
 }
 
 if (process.argv[1]?.endsWith("seed.ts")) {
@@ -233,4 +235,98 @@ if (process.argv[1]?.endsWith("seed.ts")) {
   migrate(db, { migrationsFolder: "./drizzle" });
   seed(db);
   console.log(`Демо-школа создана / Демо-мектеп жасалды. demo1234 / 123456 (${DEMO_PASSWORD} / ${DEMO_PIN}).`);
+}
+
+/** Demo data for the schedule, mood, pet, messages, notifications and observation scales. */
+function seedExtras({ db, todayDate, demoDay, rand, ids }: {
+  db: DB;
+  todayDate: string;
+  demoDay: string;
+  rand: () => number;
+  ids: { aigul: string; gulnar: string; erlan: string; saule: string; miras: string; aliya: string; game: string };
+}) {
+  const { aigul, gulnar, erlan, saule, miras, aliya, game } = ids;
+
+  // Visual schedule on school days. the first three items are already ticked today.
+  const sched: [string, string, s.ScheduleIcon][] = [
+    ["07:00", "@demo.sch.wake", "wake"],
+    ["07:10", "@demo.sch.wash", "wash"],
+    ["07:25", "@demo.sch.eat", "eat"],
+    ["07:50", "@demo.sch.bag", "bag"],
+    ["08:10", "@demo.sch.school", "school"],
+    ["16:30", "@demo.sch.homework", "homework"],
+    ["17:30", "@demo.sch.play", "play"],
+    ["20:00", "@demo.sch.bath", "bath"],
+    ["21:00", "@demo.sch.sleep", "sleep"],
+  ];
+  const day = D.isSchoolDay(todayDate) ? todayDate : demoDay;
+  for (const weekday of [1, 2, 3, 4, 5]) {
+    sched.forEach(([time, title, icon], i) => {
+      const id = crypto.randomUUID();
+      db.insert(s.scheduleItems).values({ id, studentId: miras, weekday, time, title, icon, authorId: gulnar }).run();
+      if (weekday === D.weekday(todayDate) && i < 3) db.insert(s.scheduleDone).values({ itemId: id, date: todayDate }).run();
+    });
+  }
+  // A lighter weekend, so the schedule is not empty when the demo is shown on Saturday or Sunday.
+  const weekend: [string, string, s.ScheduleIcon][] = [
+    ["08:30", "@demo.sch.wake", "wake"],
+    ["08:40", "@demo.sch.wash", "wash"],
+    ["09:00", "@demo.sch.eat", "eat"],
+    ["11:00", "@demo.sch.play", "play"],
+    ["20:00", "@demo.sch.bath", "bath"],
+    ["21:00", "@demo.sch.sleep", "sleep"],
+  ];
+  for (const weekday of [6, 7]) {
+    weekend.forEach(([time, title, icon], i) => {
+      const id = crypto.randomUUID();
+      db.insert(s.scheduleItems).values({ id, studentId: miras, weekday, time, title, icon, authorId: gulnar }).run();
+      if (weekday === D.weekday(todayDate) && i < 2) db.insert(s.scheduleDone).values({ itemId: id, date: todayDate }).run();
+    });
+  }
+  for (const weekday of [1, 2, 3, 4, 5]) {
+    sched.filter((_, i) => [0, 3, 5, 8].includes(i)).forEach(([time, title, icon]) =>
+      db.insert(s.scheduleItems).values({ studentId: aliya, weekday, time, title, icon, authorId: erlan }).run(),
+    );
+  }
+
+  // Mood notes for the last week, a little better towards the end.
+  for (const [studentId, base] of [[miras, 2.6], [aliya, 3.4]] as const) {
+    for (let back = 6; back >= 0; back--) {
+      const date = D.addDays(demoDay, -back);
+      if (!D.isSchoolDay(date)) continue;
+      for (const slot of s.MOOD_SLOTS) {
+        const mood = Math.max(1, Math.min(5, Math.round(base + (6 - back) * 0.12 + (rand() - 0.5) * 2 - (slot === "AFTER_SCHOOL" ? 0.3 : 0))));
+        db.insert(s.moodChecks).values({ studentId, date, slot, mood }).run();
+      }
+    }
+  }
+
+  db.insert(s.pets).values({ studentId: miras, kind: "fox", name: "@demo.pet.miras" }).run();
+
+  // A short conversation about Miras; the psychologist's last message is still unread by his mother.
+  const t0 = Date.now() - 3 * 3_600_000;
+  const msg = (authorId: string, text: string, at: number) =>
+    db.insert(s.chatMessages).values({ studentId: miras, authorId, text, createdAt: new Date(at) }).run();
+  msg(aigul, "@demo.chat.1", t0);
+  msg(gulnar, "@demo.chat.2", t0 + 40 * 60_000);
+  msg(saule, "@demo.chat.3", t0 + 90 * 60_000);
+  db.insert(s.chatReads).values([
+    { userId: gulnar, studentId: miras, readAt: new Date(t0 + 60 * 60_000) },
+    { userId: aigul, studentId: miras, readAt: new Date(t0 + 120 * 60_000) },
+    { userId: saule, studentId: miras, readAt: new Date(t0 + 120 * 60_000) },
+  ]).run();
+
+  db.insert(s.notifications).values([
+    { userId: gulnar, studentId: miras, kind: "ntf.chat", params: { child: "Мирас Сейітов" }, href: `/chat/${miras}`, createdAt: new Date(t0 + 90 * 60_000) },
+    { userId: gulnar, studentId: miras, kind: "ntf.rewardRequest", params: { child: "Мирас Сейітов", reward: "@demo.reward.game" }, href: `/parent?child=${miras}`, createdAt: new Date(t0 + 30 * 60_000) },
+    { userId: erlan, studentId: aliya, kind: "ntf.planPending", params: { child: "Алия Қасымова" }, href: `/parent/plan?child=${aliya}`, createdAt: new Date(t0) },
+    { userId: saule, studentId: miras, kind: "ntf.scale", params: { child: "Мирас Сейітов" }, href: `/psych/student/${miras}`, createdAt: new Date(t0 + 20 * 60_000) },
+  ]).run();
+  void game;
+
+  // Two observation forms for Miras: the teacher sees more inattention at school, the parent more movement at home.
+  const form = (respondentId: string, respondentRole: "TEACHER" | "PARENT", answers: number[], daysAgo: number) =>
+    db.insert(s.scaleResponses).values({ studentId: miras, respondentId, respondentRole, date: D.addDays(demoDay, -daysAgo), answers }).run();
+  form(aigul, "TEACHER", [2, 3, 2, 2, 3, 2, 1, 3, 2, 1, 1, 0, 1, 1, 1, 2, 1, 2], 6);
+  form(gulnar, "PARENT", [2, 2, 1, 2, 2, 3, 2, 2, 3, 2, 2, 1, 2, 3, 2, 2, 2, 2], 5);
 }

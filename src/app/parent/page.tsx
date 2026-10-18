@@ -4,6 +4,8 @@ import { ActionForm } from "@/components/ActionForm";
 import { ChildSwitch } from "@/components/ChildSwitch";
 import { HomeGoals } from "@/components/HomeGoals";
 import { WeekStrip } from "@/components/WeekStrip";
+import { MoodStrip } from "@/components/MoodStrip";
+import * as F from "@/lib/feature-services";
 import { declineRewardAction, grantRewardAction } from "@/app/actions";
 import { getDb } from "@/db";
 import { hasActiveConsent } from "@/lib/access";
@@ -36,7 +38,8 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
     );
   }
 
-  const [sum, week, st, requests, plans] = await Promise.all([
+  const [moods, sum, week, st, requests, plans] = await Promise.all([
+    F.moodsOf(db, child.id, D.addDays(S.today(), -6)),
     S.daySummary(db, child.id, day),
     S.weekSummary(db, child.id, D.mondayOf(day)),
     S.stars(db, child.id, day),
@@ -105,6 +108,17 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
           )}
         </section>
       </div>
+
+      <section className="card"><MoodStrip moods={moods} today={S.today()} /></section>
+
+      <section className="card">
+        <div className="row">
+          <Link className="btn" href={`/chat/${child.id}`}>{t("chat.open")}</Link>
+          <Link className="btn" href={`/scale/${child.id}`}>{t("sc.link")}</Link>
+          <Link className="btn" href={`/report/${child.id}`}>{t("rp.link")}</Link>
+        </div>
+        <p className="muted small">{t("sc.linkHint")}</p>
+      </section>
 
       <section className="card">
         <div className="row between">
