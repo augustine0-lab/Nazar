@@ -35,3 +35,24 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t nazar .
+      - name: Start a demo container and check it answers
+        run: |
+          docker run -d --name nazar -p 3000:3000 -e DEMO_SEED=on -e DEMO_MODE=on nazar
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/health; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:3000/api/health
+          curl -fsS -o /dev/null http://localhost:3000/demo
+          docker logs nazar
+      - name: Container logs
+        if: failure()
+        run: docker logs nazar || true

@@ -282,7 +282,8 @@ describe("observation scales", () => {
 
 describe("weekly class review", () => {
   it("lists the class with struggling goals and technique hints", async () => {
-    const rows = await F.classWeek(db, actor("aigul"), D.mondayOf(S.workDay()));
+    // Last week is always fully marked in the demo; the current one may have just started.
+    const rows = await F.classWeek(db, actor("aigul"), D.addDays(D.mondayOf(S.workDay()), -7));
     expect(rows.map((r) => r.displayName).sort()).toEqual(["Алия Қасымова", "Мирас Сейітов"]);
     const aliya = rows.find((r) => r.displayName.startsWith("Алия"))!;
     if (!aliya.consent) throw new Error("consent expected");
