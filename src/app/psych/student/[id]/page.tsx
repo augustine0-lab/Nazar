@@ -6,6 +6,9 @@ import { PlanEditor } from "./PlanEditor";
 import { MoodStrip } from "@/components/MoodStrip";
 import { ScheduleEditor } from "@/components/ScheduleEditor";
 import * as F from "@/lib/feature-services";
+import * as M from "@/lib/more-services";
+import { HealthView } from "@/components/HealthView";
+import { BagEditor } from "@/components/BagEditor";
 import { getDb } from "@/db";
 import { can } from "@/lib/access";
 import { requireUser } from "@/lib/session";
@@ -21,7 +24,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
   if (!(await can(db, user, "VIEW", id))) notFound();
   const { student, cls } = await S.getStudent(db, id);
   const canEdit = await can(db, user, "EDIT_PLAN", id);
-  const [moods, scales, schedule, series, plans, techniques, checks] = await Promise.all([
+  const [moods, scales, schedule, series, plans, techniques, checks, proposals, health, bag] = await Promise.all([
     F.moodsOf(db, id, D.addDays(S.today(), -6)),
     F.scalesOf(db, user, id),
     canEdit ? F.scheduleOf(db, id) : Promise.resolve([]),
@@ -29,6 +32,9 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
     S.plansOf(db, id),
     S.allTechniques(db),
     S.selfChecksOf(db, id, D.addDays(S.today(), -14)),
+    canEdit ? M.proposalsOf(db, user, id) : Promise.resolve([]),
+    canEdit ? M.healthOf(db, user, id) : Promise.resolve(null),
+    canEdit ? M.bagFor(db, id, S.today()) : Promise.resolve(null),
   ]);
   const current = D.planForDate(plans, S.today());
   const base = plans.find((p) => p.status === "PENDING") ?? plans.find((p) => p.status === "ACTIVE") ?? current ?? null;
@@ -60,6 +66,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
         <div className="row">
           <Link className="btn" href={`/report/${id}`}>{t("rp.link")}</Link>
           <Link className="btn" href={`/chat/${id}`}>{t("chat.open")}</Link>
+          {canEdit && <Link className="btn" href={`/stories/${id}`}>{t("story.manage")}</Link>}
         </div>
       </section>
 
@@ -100,6 +107,14 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
           <p className="muted small">{t("ps.editorHint")}</p>
           <PlanEditor
             studentId={id}
+            proposals={proposals.map(({ p, author, role }) => ({
+              id: p.id,
+              adultText: L(p.adultText),
+              childText: L(p.childText),
+              place: p.place,
+              reason: L(p.reason),
+              from: t("prop.from", { name: L(author), role: t(`role.${role}`) }),
+            }))}
             techniques={techniques.map((tq) => ({ id: tq.id, title: L(tq.title), evidence: tq.evidence }))}
             initial={{
               thresholdPct: base?.thresholdPct ?? 70,
@@ -112,6 +127,22 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
         </section>
       ) : (
         <section className="card warn"><p>{t("ps.editBlocked")}</p></section>
+      )}
+
+      {canEdit && (
+        <section className="card">
+          <h2>{t("hl.title")}</h2>
+          {health ? <HealthView logs={health.logs} analysis={health.analysis} /> : <p className="muted">{t("hl.off")}</p>}
+        </section>
+      )}
+
+      {canEdit && (
+        <section className="card">
+          <details>
+            <summary><h2 style={{ display: "inline" }}>🎒 {t("bag.editor")}</h2></summary>
+            <div style={{ marginTop: 12 }}><BagEditor studentId={id} items={bag?.items ?? []} /></div>
+          </details>
+        </section>
       )}
 
       {canEdit && (

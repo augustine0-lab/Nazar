@@ -19,18 +19,30 @@ const NAV: Record<Role, { href: string; label: MsgKey }[]> = {
     { href: "/teacher/week", label: "nav.week" },
     { href: "/chat", label: "nav.chat" },
     { href: "/techniques", label: "nav.techniques" },
+    { href: "/help", label: "nav.help" },
   ],
   PARENT: [
     { href: "/parent", label: "nav.today" },
+    { href: "/parent/week", label: "nav.weekReport" },
     { href: "/parent/schedule", label: "nav.schedule" },
     { href: "/parent/rewards", label: "nav.rewards" },
     { href: "/parent/homework", label: "nav.homework" },
     { href: "/parent/plan", label: "nav.planConsent" },
     { href: "/chat", label: "nav.chat" },
+    { href: "/help", label: "nav.help" },
   ],
-  PSYCHOLOGIST: [{ href: "/psych", label: "nav.myKids" }, { href: "/chat", label: "nav.chat" }, { href: "/techniques", label: "nav.techniques" }],
-  STUDENT: [{ href: "/student", label: "nav.myDay" }, { href: "/student/rewards", label: "nav.rewards" }],
-  ADMIN: [{ href: "/admin", label: "nav.school" }],
+  PSYCHOLOGIST: [
+    { href: "/psych", label: "nav.myKids" },
+    { href: "/chat", label: "nav.chat" },
+    { href: "/techniques", label: "nav.techniques" },
+    { href: "/help", label: "nav.help" },
+  ],
+  STUDENT: [
+    { href: "/student", label: "nav.myDay" },
+    { href: "/student/stories", label: "nav.stories" },
+    { href: "/student/rewards", label: "nav.rewards" },
+  ],
+  ADMIN: [{ href: "/admin", label: "nav.school" }, { href: "/help", label: "nav.help" }],
 };
 
 export async function Shell({ current, children }: { current: string; children: React.ReactNode }) {
@@ -58,7 +70,11 @@ export async function Shell({ current, children }: { current: string; children: 
             ))}
           </nav>
           <div className="who">
-            <span>{L(user.name)} · {t(`role.${user.role}`)}</span>
+            {user.role === "STUDENT" ? (
+              <span>{L(user.name)} · {t(`role.${user.role}`)}</span>
+            ) : (
+              <Link href="/account" aria-label={t("nav.account")}>{L(user.name)} · {t(`role.${user.role}`)}</Link>
+            )}
             {adult && (
               <Link href="/notifications" className="bell" aria-label={unread.length ? t("ntf.bell", { n: unread.length }) : t("nav.notifications")}>
                 <span aria-hidden="true">🔔</span>

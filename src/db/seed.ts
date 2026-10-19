@@ -226,6 +226,92 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
   );
 
   seedExtras({ db, todayDate, demoDay, rand, ids: { aigul, gulnar, erlan, saule, miras, aliya, game } });
+  seedMore({ db, todayDate, demoDay, rand, ids: { aigul, gulnar, saule, miras } });
+}
+
+/** Empties every table, keeping the schema and the migration history. */
+export function wipe(db: DB) {
+  const sqlite = db.$client;
+  const tables = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '__drizzle%'")
+    .all() as { name: string }[];
+  sqlite.pragma("foreign_keys = OFF");
+  try {
+    sqlite.transaction(() => {
+      for (const { name } of tables) sqlite.prepare(`DELETE FROM "${name.replace(/"/g, '""')}"`).run();
+    })();
+  } finally {
+    sqlite.pragma("foreign_keys = ON");
+  }
+}
+
+/** Puts the demo school back to its starting state (show mode). Everyone is logged out. */
+export function resetDemo(db: DB) {
+  wipe(db);
+  seed(db);
+}
+
+/** Demo data for stories, the bag checklist, the saving goal, a goal proposal and the sleep diary. */
+function seedMore({ db, todayDate, demoDay, rand, ids }: {
+  db: DB;
+  todayDate: string;
+  demoDay: string;
+  rand: () => number;
+  ids: { aigul: string; gulnar: string; saule: string; miras: string };
+}) {
+  const { aigul, gulnar, saule, miras } = ids;
+
+  db.insert(s.stories).values({
+    studentId: miras,
+    title: "@demo.story.title",
+    steps: [
+      { icon: "🔊", text: "@demo.story.s1" },
+      { icon: "🎧", text: "@demo.story.s2" },
+      { icon: "📓", text: "@demo.story.s3" },
+      { icon: "😊", text: "@demo.story.s4" },
+    ],
+    authorId: saule,
+  }).run();
+
+  const bag: [string, string][] = [["📚", "books"], ["📓", "diary"], ["✏️", "pencil"], ["👟", "shoes"], ["💧", "water"]];
+  bag.forEach(([icon, key], position) => {
+    const id = crypto.randomUUID();
+    db.insert(s.bagItems).values({ id, studentId: miras, title: `@demo.bag.${key}`, icon, position }).run();
+    if (position < 2) db.insert(s.bagDone).values({ itemId: id, date: todayDate }).run();
+  });
+
+  // Most of the picture schedule was ticked on the past two weeks, so the weekly report has numbers.
+  const items = db.select().from(s.scheduleItems).all().filter((i) => i.studentId === miras);
+  for (let back = 13; back >= 1; back--) {
+    const date = D.addDays(todayDate, -back);
+    for (const it of items) if (it.weekday === D.weekday(date) && rand() < 0.75) db.insert(s.scheduleDone).values({ itemId: it.id, date }).run();
+  }
+
+  const big = crypto.randomUUID();
+  db.insert(s.rewards).values({ id: big, studentId: miras, title: "@demo.reward.big", cost: 25 }).run();
+  db.insert(s.goalPins).values({ studentId: miras, rewardId: big, setById: gulnar }).run();
+
+  db.insert(s.goalProposals).values({
+    studentId: miras,
+    authorId: aigul,
+    adultText: "@demo.prop.adult",
+    childText: "@demo.prop.child",
+    place: "SCHOOL",
+    reason: "@demo.prop.reason",
+  }).run();
+
+  // Sleep diary for three weeks. Fictional: shorter nights are put before weaker school days,
+  // so the comparison on the psychologist's screen has something to show.
+  db.insert(s.healthSettings).values({ studentId: miras, enabled: true, changedById: gulnar, changedAt: new Date(D.addDays(demoDay, -21) + "T20:00:00Z") }).run();
+  const schoolMarks = db.select().from(s.marks).all().filter((m) => m.studentId === miras && m.lessonNo > 0);
+  for (let back = 20; back >= 0; back--) {
+    const date = D.addDays(demoDay, -back);
+    if (date > todayDate) continue;
+    const ratio = D.tally(schoolMarks.filter((m) => m.date === date)).ratio;
+    const weak = ratio !== null && ratio < 0.6;
+    const sleepHours = Math.round(((weak ? 8.2 : 9.4) + (rand() - 0.5)) * 2) / 2;
+    db.insert(s.healthLogs).values({ studentId: miras, date, sleepHours, medication: "NONE", authorId: gulnar }).run();
+  }
 }
 
 if (process.argv[1]?.endsWith("seed.ts")) {

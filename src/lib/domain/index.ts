@@ -245,3 +245,4 @@ export function selfCheckAt(workMin: number, random = Math.random()): number {
   return Math.round(lo + (hi - lo) * random);
 }
 export * from "./extras";
+export * from "./more";

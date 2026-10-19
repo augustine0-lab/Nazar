@@ -4,6 +4,7 @@ import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
 import { MarkGrid } from "./MarkGrid";
 import { NoteField } from "@/components/NoteField";
+import { ProposeGoal } from "@/components/ProposeGoal";
 import { saveNoteAction } from "@/app/actions";
 import { getDb } from "@/db";
 import { can } from "@/lib/access";
@@ -103,6 +104,15 @@ export default async function TeacherStudent({ params, searchParams }: { params:
         </div>
         <p className="muted small">{t("sc.linkHint")}</p>
       </section>
+
+      {canMark && (
+        <section className="card">
+          <details>
+            <summary><h2 style={{ display: "inline" }}>{t("prop.title")}</h2></summary>
+            <div style={{ marginTop: 12 }}><ProposeGoal actor={user} studentId={id} /></div>
+          </details>
+        </section>
+      )}
 
       {sum.plan && sum.plan.techniques.length > 0 && (
         <section className="card">

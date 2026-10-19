@@ -15,6 +15,13 @@
       "when": 1792336610404,
       "tag": "0001_features",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792339885735,
+      "tag": "0002_batch2",
+      "breakpoints": true
     }
   ]
 }

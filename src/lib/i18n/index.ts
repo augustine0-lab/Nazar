@@ -8,6 +8,7 @@ import { psych } from "./messages/psych";
 import { admin } from "./messages/admin";
 import { demo } from "./messages/demo";
 import { features } from "./messages/features";
+import { more } from "./messages/more";
 
 export type Lang = "ru" | "kk";
 export const LANGS: readonly Lang[] = ["ru", "kk"];
@@ -17,7 +18,7 @@ export const LOCALE: Record<Lang, string> = { ru: "ru-RU", kk: "kk-KZ" };
 
 /** Every message exists in both languages: [russian, kazakh]. A missing translation fails the type check. */
 type Entry = readonly [ru: string, kk: string];
-const ALL = { ...common, ...errors, ...login, ...teacher, ...parent, ...student, ...psych, ...admin, ...demo, ...features } satisfies Record<string, Entry>;
+const ALL = { ...common, ...errors, ...login, ...teacher, ...parent, ...student, ...psych, ...admin, ...demo, ...features, ...more } satisfies Record<string, Entry>;
 
 export type MsgKey = keyof typeof ALL;
 export type Params = Record<string, string | number>;
