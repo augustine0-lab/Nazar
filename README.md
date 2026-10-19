@@ -136,6 +136,8 @@ npm run dev        # http://localhost:3000
 
 На бесплатном тарифе Render (без банковской карты) нет постоянного диска и сервис засыпает после 15 минут без посетителей. Для демо это удобно: после каждого сна база создаётся заново и демо-школа возвращается к началу. Первое открытие после сна занимает около минуты.
 
+Быстрее всего в один клик: откройте https://dashboard.render.com/blueprint/new?repo=https://github.com/augustine0-lab/Nazar , войдите через GitHub и нажмите Apply (Deploy Blueprint). Настройки возьмутся из файла `render.yaml`. То же вручную:
+
 1. Зарегистрируйтесь на render.com через GitHub.
 2. New → Web Service → выберите репозиторий Nazar. Render сам найдёт `Dockerfile`.
 3. Instance Type: Free.

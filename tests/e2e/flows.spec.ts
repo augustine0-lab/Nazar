@@ -252,6 +252,8 @@ test("the teacher's week review explains struggling goals and the report is prin
   await login(teacher, "aigul");
   await teacher.getByRole("link", { name: "Итоги недели" }).click();
   await expect(teacher.getByRole("heading", { name: "Итоги недели" })).toBeVisible();
+  // Last week is fully marked in the demo; on a Monday the current week has barely started.
+  await teacher.getByRole("link", { name: "← Прошлая неделя" }).click();
   await expect(teacher.getByText("Что можно попробовать:").first()).toBeVisible();
 
   const psych = await browser.newPage();

@@ -1,0 +1,14 @@
+# Render Blueprint: a free demo server of Nazar.
+# One click: https://dashboard.render.com/blueprint/new?repo=https://github.com/augustine0-lab/Nazar
+# The free plan has no persistent disk, so the demo school is created again after every restart.
+services:
+  - type: web
+    name: nazar
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: DEMO_SEED
+        value: "on"
+      - key: DEMO_MODE
+        value: "on"
