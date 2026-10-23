@@ -33,6 +33,8 @@ import {
   students,
   supportPlans,
   techniques,
+  trials,
+  passports,
   users,
   type MarkValue,
   type Role,
@@ -540,6 +542,8 @@ export async function purgeRevokedData(db: DB, now = new Date()) {
       tx.delete(goalProposals).where(eq(goalProposals.studentId, c.studentId)).run();
       tx.delete(healthLogs).where(eq(healthLogs.studentId, c.studentId)).run();
       tx.delete(healthSettings).where(eq(healthSettings.studentId, c.studentId)).run();
+      tx.delete(trials).where(eq(trials.studentId, c.studentId)).run();
+      tx.delete(passports).where(eq(passports.studentId, c.studentId)).run();
     });
     purged.push(c.studentId);
   }

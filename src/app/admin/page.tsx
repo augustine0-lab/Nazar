@@ -1,6 +1,6 @@
 import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
-import { createClassAction, createStudentAction, createUserAction, linkAction, resetPasswordAction } from "@/app/actions";
+import { createClassAction, createStudentAction, createUserAction, linkAction, moveStudentAction, resetPasswordAction } from "@/app/actions";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
@@ -99,6 +99,16 @@ export default async function AdminPage() {
           </ActionForm>
         </section>
       </div>
+
+      <section className="card">
+        <h2>{t("ad.move")}</h2>
+        <p className="muted small">{t("ad.moveHint")}</p>
+        <ActionForm action={moveStudentAction} className="form-grid">
+          <label>{t("ad.student")}<select name="studentId">{kids.map(({ student, className }) => <option key={student.id} value={student.id}>{student.displayName} · {className}</option>)}</select></label>
+          <label>{t("ad.moveTo")}<select name="classId">{classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <button className="btn primary" type="submit">{t("ad.moveBtn")}</button>
+        </ActionForm>
+      </section>
 
       <section className="card">
         <h2>{t("ad.reset")}</h2>
