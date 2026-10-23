@@ -12,9 +12,12 @@ const SECTIONS: { id: string; n: number }[] = [
   { id: "avoid", n: 3 },
   { id: "sleep", n: 2 },
   { id: "stories", n: 1 },
+  { id: "trial", n: 2 },
+  { id: "passport", n: 1 },
+  { id: "udl", n: 1 },
   { id: "when", n: 1 },
 ];
-const SOURCES = ["wolraich", "nice", "pyle", "fabiano", "moore", "paruthi", "gray"];
+const SOURCES = ["wolraich", "nice", "pyle", "fabiano", "moore", "paruthi", "gray", "kratochwill", "cast"];
 
 /** A short ADHD primer with sources, the same for every adult in the team. */
 export default async function HelpPage() {

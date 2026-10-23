@@ -12,6 +12,8 @@ import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import { TrialCard } from "@/components/TrialCard";
+import * as C from "@/lib/concept-services";
 
 export default async function TeacherStudent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ date?: string }> }) {
   const user = await requireUser("TEACHER");
@@ -29,6 +31,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
   const myNote = sum.notes.find((n) => n.note.authorId === user.id);
   const schoolGoals = sum.plan?.goals.filter((g) => g.place === "SCHOOL") ?? [];
   const lesson = date === S.today() ? D.currentLessonNo(school.bellSchedule, S.nowLocal()) : 1;
+  const running = canMark ? (await C.trialsOf(db, user, id)).find((x) => x.trial.status === "RUNNING") : undefined;
 
   return (
     <Shell current="/teacher">
@@ -47,6 +50,14 @@ export default async function TeacherStudent({ params, searchParams }: { params:
           </Link>
         </nav>
       </div>
+
+      {running && (
+        <section className="card" style={{ borderColor: "var(--accent)" }}>
+          <span className="eyebrow">{t("tr.nowTrying")}</span>
+          <TrialCard v={running} manage={false} compact />
+          <p className="muted small">{t("tr.teacherHint")}</p>
+        </section>
+      )}
 
       {!canMark ? (
         <section className="card warn">
@@ -101,6 +112,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
         <div className="row">
           <Link className="btn" href={`/chat/${id}`}>{t("chat.open")}</Link>
           <Link className="btn" href={`/scale/${id}`}>{t("sc.link")}</Link>
+          <Link className="btn" href={`/passport/${id}`}>{t("pp.link")}</Link>
         </div>
         <p className="muted small">{t("sc.linkHint")}</p>
       </section>

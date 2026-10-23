@@ -336,3 +336,28 @@ label.check { flex-direction: row; gap: 10px; align-items: flex-start; cursor: p
 .demo-role { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; min-height: 64px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .demo-role > span:first-child { font-size: 1.8rem; line-height: 1; }
 .demo-role:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* ---------- class for everyone (UDL) and the lesson board ---------- */
+.udl .sched-item.done { color: var(--fg); border-color: var(--accent); background: var(--accent-soft); }
+.udl .sched-item.done .pic { opacity: 1; }
+.udl .sched-item.done .ttl { text-decoration: none; }
+.udl .sched-item .pic { font-size: 1.8rem; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { padding: 0; margin-bottom: 6px; }
+.board { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 24px; align-items: start; }
+.board:fullscreen { border: 0; border-radius: 0; padding: 4vw; font-size: 1.4rem; align-content: center; }
+.board-now { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.board-now .pic { font-size: 5rem; line-height: 1; }
+.board-now .ttl { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; line-height: 1.15; }
+.board:fullscreen .board-now .pic { font-size: 9rem; }
+.board:fullscreen .board-now .ttl { font-size: 3.6rem; }
+.board-ring { width: 100%; max-width: 220px; aspect-ratio: 1; }
+.board-ring text { font-family: var(--font-display); font-weight: 700; fill: var(--fg); }
+.board-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; grid-column: 1 / -1; }
+.board-steps li { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 10px; background: var(--surface-2); }
+.board-steps li.now { background: var(--accent-soft); font-weight: 700; }
+.board-steps li.past { opacity: 0.5; text-decoration: line-through; }
+.board-steps .min { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.board-next { color: var(--muted); }
+.board-timeup { color: var(--star); font-weight: 700; }
+@media (max-width: 640px) { .board { grid-template-columns: 1fr; } .board-now .ttl { font-size: 1.6rem; } .board-now .pic { font-size: 3.6rem; } }

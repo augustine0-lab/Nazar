@@ -11,14 +11,14 @@ export const DEMO_PIN = "123456";
 
 // Demo texts are stored as "@<key>" and translated on screen (see src/lib/i18n/messages/demo.ts).
 const TECHNIQUES: (typeof s.techniques.$inferInsert)[] = [
-  { title: "@demo.tech.card.title", body: "@demo.tech.card.body", evidence: "STRONG", source: "@demo.src.pyle" },
-  { title: "@demo.tech.praise.title", body: "@demo.tech.praise.body", evidence: "STRONG", source: "@demo.src.moore" },
-  { title: "@demo.tech.instr.title", body: "@demo.tech.instr.body", evidence: "MODERATE", source: "@demo.src.moore" },
-  { title: "@demo.tech.chunk.title", body: "@demo.tech.chunk.body", evidence: "MODERATE", source: "@demo.src.moore" },
-  { title: "@demo.tech.self.title", body: "@demo.tech.self.body", evidence: "MODERATE", source: "@demo.src.single" },
-  { title: "@demo.tech.move.title", body: "@demo.tech.move.body", evidence: "PRACTICE", source: "@demo.src.practice" },
-  { title: "@demo.tech.seat.title", body: "@demo.tech.seat.body", evidence: "PRACTICE", source: "@demo.src.practice" },
-  { title: "@demo.tech.visual.title", body: "@demo.tech.visual.body", evidence: "PRACTICE", source: "@demo.src.udl" },
+  { title: "@demo.tech.card.title", body: "@demo.tech.card.body", evidence: "STRONG", source: "@demo.src.pyle", classSupport: null },
+  { title: "@demo.tech.praise.title", body: "@demo.tech.praise.body", evidence: "STRONG", source: "@demo.src.moore", classSupport: "praise" },
+  { title: "@demo.tech.instr.title", body: "@demo.tech.instr.body", evidence: "MODERATE", source: "@demo.src.moore", classSupport: "twoWays" },
+  { title: "@demo.tech.chunk.title", body: "@demo.tech.chunk.body", evidence: "MODERATE", source: "@demo.src.moore", classSupport: "chunks" },
+  { title: "@demo.tech.self.title", body: "@demo.tech.self.body", evidence: "MODERATE", source: "@demo.src.single", classSupport: "checklist" },
+  { title: "@demo.tech.move.title", body: "@demo.tech.move.body", evidence: "PRACTICE", source: "@demo.src.practice", classSupport: "move" },
+  { title: "@demo.tech.seat.title", body: "@demo.tech.seat.body", evidence: "PRACTICE", source: "@demo.src.practice", classSupport: "space" },
+  { title: "@demo.tech.visual.title", body: "@demo.tech.visual.body", evidence: "PRACTICE", source: "@demo.src.udl", classSupport: "board" },
 ];
 
 /** Small deterministic generator so the demo looks the same on every run. */
@@ -227,6 +227,77 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
 
   seedExtras({ db, todayDate, demoDay, rand, ids: { aigul, gulnar, erlan, saule, miras, aliya, game } });
   seedMore({ db, todayDate, demoDay, rand, ids: { aigul, gulnar, saule, miras } });
+  seedConcepts({
+    db,
+    demoDay,
+    fourWeeksAgo,
+    ids: { aigul, saule, miras, aliya, class3b, chunk: techniqueIds[3], move: techniqueIds[5], mirasStart: mishaPlan.goalIds[0], aliyaStay: anyaG1 },
+  });
+}
+
+/** Demo data for technique trials, Miras's passport, class-wide supports and the lesson board of 3 «Б». */
+function seedConcepts({ db, demoDay, fourWeeksAgo, ids }: {
+  db: DB;
+  demoDay: string;
+  fourWeeksAgo: string;
+  ids: { aigul: string; saule: string; miras: string; aliya: string; class3b: string; chunk: string; move: string; mirasStart: string; aliyaStay: string };
+}) {
+  const { aigul, saule, miras, aliya, class3b } = ids;
+  const lineage = (goalId: string) => db.select().from(s.goals).all().find((g) => g.id === goalId)!.lineageId;
+
+  // A finished trial for Miras: ten school days of history before it, five days of trying.
+  const start = D.nthSchoolDay(fourWeeksAgo, 11);
+  const end = D.nthSchoolDay(start, 5);
+  if (end < demoDay)
+    db.insert(s.trials).values({
+      studentId: miras,
+      techniqueId: ids.chunk,
+      lineageId: lineage(ids.mirasStart),
+      howTo: "@demo.trial.howToChunk",
+      startDate: start,
+      endDate: end,
+      status: "DONE",
+      decision: "KEEP",
+      conclusion: "@demo.trial.concChunk",
+      authorId: saule,
+      decidedAt: new Date(end + "T15:00:00Z"),
+    }).run();
+
+  // Aliya is in the middle of a ten-day trial of movement breaks.
+  const aStart = D.schoolDaysBefore(demoDay, 4)[0];
+  db.insert(s.trials).values({
+    studentId: aliya,
+    techniqueId: ids.move,
+    lineageId: lineage(ids.aliyaStay),
+    howTo: "@demo.trial.howToMove",
+    startDate: aStart,
+    endDate: D.nthSchoolDay(aStart, 10),
+    authorId: saule,
+  }).run();
+
+  const f = (k: string) => `@demo.pp.${k}`;
+  db.insert(s.passports).values({
+    studentId: miras,
+    strengths: f("strengths"),
+    interests: f("interests"),
+    helps: f("helps"),
+    hard: f("hard"),
+    calming: f("calming"),
+    family: f("family"),
+    updatedById: aigul,
+    updatedAt: new Date(D.addDays(demoDay, -2) + "T16:00:00Z"),
+  }).run();
+
+  for (const support of ["goal", "praise", "twoWays", "chunks", "board"])
+    db.insert(s.classSupports).values({ classId: class3b, support, enabledById: aigul, enabledAt: new Date(fourWeeksAgo + "T08:00:00Z") }).run();
+
+  const board: [string, number][] = [["👋", 3], ["🔢", 7], ["➗", 12], ["🤸", 3], ["👫", 12], ["✅", 5]];
+  db.insert(s.classBoards).values({
+    classId: class3b,
+    steps: board.map(([icon, minutes], i) => ({ icon, text: `@demo.board.s${i + 1}`, minutes })),
+    updatedById: aigul,
+    updatedAt: new Date(),
+  }).run();
 }
 
 /** Empties every table, keeping the schema and the migration history. */

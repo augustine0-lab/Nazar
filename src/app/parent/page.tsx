@@ -14,6 +14,8 @@ import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import { TrialCard } from "@/components/TrialCard";
+import * as C from "@/lib/concept-services";
 
 export default async function ParentToday({ searchParams }: { searchParams: Promise<{ child?: string }> }) {
   const user = await requireUser("PARENT");
@@ -38,14 +40,16 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
     );
   }
 
-  const [moods, sum, week, st, requests, plans] = await Promise.all([
+  const [moods, sum, week, st, requests, plans, tried] = await Promise.all([
     F.moodsOf(db, child.id, D.addDays(S.today(), -6)),
     S.daySummary(db, child.id, day),
     S.weekSummary(db, child.id, D.mondayOf(day)),
     S.stars(db, child.id, day),
     S.rewardRequestsOf(db, child.id),
     S.plansOf(db, child.id),
+    C.trialsOf(db, user, child.id),
   ]);
+  const running = tried.find((x) => x.trial.status === "RUNNING");
   const pendingPlan = plans.find((p) => p.status === "PENDING");
   const pendingReq = requests.filter((r) => r.request.status === "PENDING");
   const schoolGoals = sum.plan?.goals.filter((g) => g.place === "SCHOOL") ?? [];
@@ -111,6 +115,14 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
 
       <section className="card"><MoodStrip moods={moods} today={S.today()} /></section>
 
+      {running && (
+        <section className="card">
+          <span className="eyebrow">{t("tr.nowTrying")}</span>
+          <TrialCard v={running} manage={false} compact />
+          <p className="muted small">{t("tr.parentHint")}</p>
+        </section>
+      )}
+
       <section className="card">
         <div className="row">
           <Link className="btn" href={`/chat/${child.id}`}>{t("chat.open")}</Link>
@@ -119,6 +131,7 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
           <Link className="btn" href={`/parent/week${q}`}>{t("wr.link")}</Link>
           <Link className="btn" href={`/parent/health${q}`}>{t("hl.link")}</Link>
           <Link className="btn" href={`/stories/${child.id}`}>{t("story.manage")}</Link>
+          <Link className="btn" href={`/passport/${child.id}`}>{t("pp.link")}</Link>
         </div>
         <p className="muted small">{t("sc.linkHint")}</p>
       </section>
