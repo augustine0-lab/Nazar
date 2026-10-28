@@ -15,6 +15,7 @@ const SECTIONS: { id: string; n: number }[] = [
   { id: "trial", n: 2 },
   { id: "passport", n: 1 },
   { id: "udl", n: 1 },
+  { id: "read", n: 1 },
   { id: "when", n: 1 },
 ];
 const SOURCES = ["wolraich", "nice", "pyle", "fabiano", "moore", "paruthi", "gray", "kratochwill", "cast"];

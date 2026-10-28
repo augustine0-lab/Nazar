@@ -44,8 +44,10 @@ export default async function ClassForAll({ searchParams }: { searchParams: Prom
       <>
         <section className="card">
           <p>{t("udl.lead")}</p>
+          <p className="muted small">{t("read.openHint")}</p>
           <div className="row">
             <Link className="btn primary" href={`/teacher/board?class=${cls.id}`}>🗂️ {t("board.open")}</Link>
+            <Link className="btn" href={`/teacher/read?class=${cls.id}`}>📖 {t("read.open")}</Link>
           </div>
         </section>
 

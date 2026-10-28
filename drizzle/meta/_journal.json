@@ -29,6 +29,13 @@
       "when": 1792730316415,
       "tag": "0003_concepts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793200728702,
+      "tag": "0004_reading",
+      "breakpoints": true
     }
   ]
 }

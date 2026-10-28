@@ -522,3 +522,21 @@ export const classBoards = sqliteTable("class_boards", {
   updatedById: text("updated_by_id").notNull().references(() => users.id),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
+
+/* ---------- living text: a reading in short chapters with pictures, for the whole class ---------- */
+
+export const readings = sqliteTable(
+  "readings",
+  {
+    id: id(),
+    classId: text("class_id").notNull().references(() => classGroups.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    // Subject or book, shown small above the title.
+    source: text("source").notNull().default(""),
+    // [{ title, text, scene }]
+    chapters: text("chapters", { mode: "json" }).$type<{ title: string; text: string; scene: string }[]>().notNull(),
+    authorId: text("author_id").notNull().references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("readings_class_idx").on(t.classId, t.createdAt)],
+);

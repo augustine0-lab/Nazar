@@ -57,3 +57,27 @@ test("the class for everyone shows covered needs and the lesson board runs", asy
   await page.getByRole("button", { name: /Дальше/ }).click();
   await expect(page.locator(".board-now").getByText("Устный счёт")).toBeVisible();
 });
+
+test("the teacher makes a living text and the pupil reads it chapter by chapter", async ({ browser }) => {
+  const teacher = await browser.newPage();
+  await login(teacher, "aigul");
+  await teacher.goto("/teacher/class");
+  await teacher.getByRole("link", { name: /Живые тексты/ }).click();
+  await teacher.getByLabel("Название", { exact: true }).fill("Осень");
+  await teacher.getByLabel("Текст по главам").fill("Осенний лес\nЛистья падают.\n\nНочь\nНа небе звёзды.");
+  await teacher.getByRole("button", { name: "Создать" }).click();
+  await expect(teacher.getByRole("heading", { name: "Осень" })).toBeVisible();
+
+  const pupil = await browser.newPage();
+  await login(pupil, "miras", "123456");
+  await pupil.getByRole("link", { name: "Чтение" }).first().click();
+  await pupil.getByRole("link", { name: /Путешествие капли/ }).click();
+  await expect(pupil.getByRole("heading", { name: "В тёплом море" })).toBeVisible();
+  await pupil.getByRole("button", { name: /Дальше/ }).click();
+  await expect(pupil.getByRole("heading", { name: "Капля в облаке" })).toBeVisible();
+  await pupil.getByRole("button", { name: "05 · Через степь домой" }).click();
+  await pupil.getByRole("button", { name: "Дочитал(а)" }).click();
+  await expect(pupil.getByText("Ты дочитал(а) до конца!")).toBeVisible();
+  await pupil.goto("/student/read");
+  await expect(pupil.getByRole("link", { name: /Осень/ })).toBeVisible();
+});
