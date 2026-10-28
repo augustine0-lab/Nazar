@@ -298,6 +298,15 @@ function seedConcepts({ db, demoDay, fourWeeksAgo, ids }: {
     updatedById: aigul,
     updatedAt: new Date(),
   }).run();
+
+  const water: D.Scene[] = ["sea", "sky", "mountains", "river", "steppe"];
+  db.insert(s.readings).values({
+    classId: class3b,
+    title: "@demo.read.water.title",
+    source: "@demo.read.water.source",
+    chapters: water.map((scene, i) => ({ title: `@demo.read.water.${i + 1}.title`, text: `@demo.read.water.${i + 1}.text`, scene })),
+    authorId: aigul,
+  }).run();
 }
 
 /** Empties every table, keeping the schema and the migration history. */

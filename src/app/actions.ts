@@ -12,6 +12,7 @@ import * as S from "@/lib/services";
 import * as F from "@/lib/feature-services";
 import * as M from "@/lib/more-services";
 import * as C from "@/lib/concept-services";
+import * as R from "@/lib/reading-services";
 import { flushOutbox } from "@/lib/mailer";
 import { demoEnabled } from "@/lib/demo-mode";
 import { resetDemo } from "@/db/seed";
@@ -455,4 +456,25 @@ export async function setClassSupportAction(classId: string, support: string, on
 
 export async function saveBoardAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run((a) => C.saveBoard(getDb(), a, { classId: str(fd, "classId"), text: str(fd, "text") }), "flash.boardSaved");
+}
+
+/* ---------- living text ---------- */
+
+export async function createReadingAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  let id: string | undefined;
+  const input = { classId: str(fd, "classId"), title: str(fd, "title"), source: str(fd, "source"), text: str(fd, "text") };
+  const res = await run(async (a) => { id = await R.createReading(getDb(), a, input); }, "flash.readingSaved");
+  if (id) redirect(`/teacher/read/${id}`);
+  return res;
+}
+
+export async function updateReadingAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const input = { id: str(fd, "id"), title: str(fd, "title"), source: str(fd, "source"), text: str(fd, "text"), scenes: fd.getAll("scene").map(String) };
+  return run((a) => R.updateReading(getDb(), a, input), "flash.readingSaved");
+}
+
+export async function deleteReadingAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const res = await run((a) => R.deleteReading(getDb(), a, str(fd, "id")), "flash.readingDeleted");
+  if (res?.ok) redirect(`/teacher/read?class=${str(fd, "classId")}`);
+  return res;
 }

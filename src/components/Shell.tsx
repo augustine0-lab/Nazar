@@ -40,6 +40,7 @@ const NAV: Record<Role, { href: string; label: MsgKey }[]> = {
   ],
   STUDENT: [
     { href: "/student", label: "nav.myDay" },
+    { href: "/student/read", label: "nav.read" },
     { href: "/student/stories", label: "nav.stories" },
     { href: "/student/rewards", label: "nav.rewards" },
   ],
