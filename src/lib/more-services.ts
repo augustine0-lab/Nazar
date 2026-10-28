@@ -24,6 +24,8 @@ import {
   scheduleItems,
   selfChecks,
   stories,
+  trials,
+  passports,
   users,
   type GoalPlace,
   type Medication,
@@ -323,6 +325,8 @@ export async function exportStudentData(db: DB, actor: Actor, studentId: string)
     // Only the parent's own observation forms: other adults' answers are their personal data.
     myScaleForms: await db.query.scaleResponses.findMany({ where: and(eq(scaleResponses.studentId, studentId), eq(scaleResponses.respondentId, actor.id)) }),
     healthDiary: await db.query.healthLogs.findMany({ where: eq(healthLogs.studentId, studentId) }),
+    trials: await db.query.trials.findMany({ where: eq(trials.studentId, studentId) }),
+    passport: (await db.query.passports.findFirst({ where: eq(passports.studentId, studentId) })) ?? null,
   };
   S.audit(db, actor, "data.export", studentId);
   return data;

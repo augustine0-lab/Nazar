@@ -77,7 +77,11 @@ export type Permission =
   | "PROPOSE_GOAL"
   | "MANAGE_HEALTH"
   | "VIEW_HEALTH"
-  | "EXPORT_DATA";
+  | "EXPORT_DATA"
+  | "RUN_TRIAL"
+  | "VIEW_TRIAL"
+  | "VIEW_PASSPORT"
+  | "EDIT_PASSPORT";
 
 const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLOGIST">> = {
   VIEW: ["SELF", "TEACHER", "PARENT", "PSYCHOLOGIST"],
@@ -106,6 +110,11 @@ const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLO
   MANAGE_HEALTH: ["PARENT"],
   VIEW_HEALTH: ["PARENT", "PSYCHOLOGIST"],
   EXPORT_DATA: ["PARENT"],
+  // One change at a time, planned by the specialist who owns the support plan.
+  RUN_TRIAL: ["PSYCHOLOGIST"],
+  VIEW_TRIAL: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
+  VIEW_PASSPORT: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
+  EDIT_PASSPORT: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
 };
 
 // Without parental consent only the consent itself can be managed, and a parent can still download what was collected.

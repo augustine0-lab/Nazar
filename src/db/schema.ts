@@ -222,6 +222,8 @@ export const techniques = sqliteTable("techniques", {
   body: text("body").notNull(),
   evidence: text("evidence", { enum: EVIDENCE }).notNull(),
   source: text("source"),
+  // The class-wide support (UDL_SUPPORTS key) that gives every pupil the same help, if there is one.
+  classSupport: text("class_support"),
 });
 
 export const planTechniques = sqliteTable(
@@ -456,4 +458,67 @@ export const emailOutbox = sqliteTable("email_outbox", {
   error: text("error"),
   createdAt: createdAt(),
   sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+});
+
+/* ---------- trying one technique at a time: the team compares days before and during ---------- */
+
+export const TRIAL_STATUS = ["RUNNING", "DONE"] as const;
+export const TRIAL_DECISION = ["KEEP", "DROP"] as const;
+export type TrialDecision = (typeof TRIAL_DECISION)[number];
+
+export const trials = sqliteTable(
+  "trials",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    techniqueId: text("technique_id").notNull().references(() => techniques.id),
+    // The goal being watched (goals.lineage_id); null means all school goals together.
+    lineageId: text("lineage_id"),
+    // What exactly the adults do differently, in their words.
+    howTo: text("how_to").notNull().default(""),
+    startDate: text("start_date").notNull(),
+    endDate: text("end_date").notNull(),
+    status: text("status", { enum: TRIAL_STATUS }).notNull().default("RUNNING"),
+    decision: text("decision", { enum: TRIAL_DECISION }),
+    conclusion: text("conclusion"),
+    authorId: text("author_id").notNull().references(() => users.id),
+    decidedAt: integer("decided_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("trials_student_idx").on(t.studentId, t.startDate)],
+);
+
+/* ---------- transition passport: what a new teacher should know on day one ---------- */
+
+export const passports = sqliteTable("passports", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  strengths: text("strengths").notNull().default(""),
+  interests: text("interests").notNull().default(""),
+  helps: text("helps").notNull().default(""),
+  hard: text("hard").notNull().default(""),
+  calming: text("calming").notNull().default(""),
+  family: text("family").notNull().default(""),
+  updatedById: text("updated_by_id").notNull().references(() => users.id),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+/* ---------- the class as a whole: universal supports and the lesson board ---------- */
+
+export const classSupports = sqliteTable(
+  "class_supports",
+  {
+    classId: text("class_id").notNull().references(() => classGroups.id, { onDelete: "cascade" }),
+    support: text("support").notNull(),
+    enabledById: text("enabled_by_id").notNull().references(() => users.id),
+    enabledAt: integer("enabled_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.classId, t.support] })],
+);
+
+export const classBoards = sqliteTable("class_boards", {
+  classId: text("class_id").primaryKey().references(() => classGroups.id, { onDelete: "cascade" }),
+  // [{ icon, text, minutes }]
+  steps: text("steps", { mode: "json" }).$type<{ icon: string; text: string; minutes: number }[]>().notNull(),
+  updatedById: text("updated_by_id").notNull().references(() => users.id),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });

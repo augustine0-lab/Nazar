@@ -11,12 +11,13 @@ import { endSession, requireUser, startSession, HOME_BY_ROLE } from "@/lib/sessi
 import * as S from "@/lib/services";
 import * as F from "@/lib/feature-services";
 import * as M from "@/lib/more-services";
+import * as C from "@/lib/concept-services";
 import { flushOutbox } from "@/lib/mailer";
 import { demoEnabled } from "@/lib/demo-mode";
 import { resetDemo } from "@/db/seed";
 import { LANG_COOKIE, LOCALE, isLang, msgText, type MsgKey, type Params } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
-import { APP_TZ, formatDate, SCALE_ITEM_COUNT } from "@/lib/domain";
+import { APP_TZ, formatDate, PASSPORT_FIELDS, SCALE_ITEM_COUNT } from "@/lib/domain";
 
 export type ActionState = { ok?: string; error?: string } | null;
 
@@ -406,4 +407,52 @@ export async function logHealthAction(_: ActionState, fd: FormData): Promise<Act
 
 export async function saveEmailPrefsAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run((a) => M.setEmailPrefs(getDb(), a, { email: str(fd, "email"), notify: str(fd, "notify") === "on", lang: str(fd, "lang") }), "flash.emailSaved");
+}
+
+/* ---------- trying a technique ---------- */
+
+export async function startTrialAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(
+    (a) =>
+      C.startTrial(getDb(), a, {
+        studentId: str(fd, "studentId"),
+        techniqueId: str(fd, "techniqueId"),
+        lineageId: str(fd, "lineageId") || null,
+        days: int(fd, "days"),
+        howTo: str(fd, "howTo"),
+      }),
+    "flash.trialStarted",
+  );
+}
+
+export async function extendTrialAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => C.extendTrial(getDb(), a, { studentId: str(fd, "studentId"), trialId: str(fd, "trialId") }), "flash.trialExtended");
+}
+
+export async function finishTrialAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(
+    (a) => C.finishTrial(getDb(), a, { studentId: str(fd, "studentId"), trialId: str(fd, "trialId"), decision: str(fd, "decision"), conclusion: str(fd, "conclusion") }),
+    "flash.trialFinished",
+  );
+}
+
+/* ---------- transition passport and moving a pupil ---------- */
+
+export async function savePassportAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const fields = Object.fromEntries(PASSPORT_FIELDS.map((f) => [f, str(fd, f)])) as Record<(typeof PASSPORT_FIELDS)[number], string>;
+  return run((a) => C.savePassport(getDb(), a, { studentId: str(fd, "studentId"), ...fields }), "flash.passportSaved");
+}
+
+export async function moveStudentAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => C.moveStudent(getDb(), a, { studentId: str(fd, "studentId"), classId: str(fd, "classId") }), "flash.studentMoved");
+}
+
+/* ---------- the class as a whole ---------- */
+
+export async function setClassSupportAction(classId: string, support: string, on: boolean): Promise<ActionState> {
+  return run((a) => C.setClassSupport(getDb(), a, { classId, support, on }), null, undefined, false);
+}
+
+export async function saveBoardAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => C.saveBoard(getDb(), a, { classId: str(fd, "classId"), text: str(fd, "text") }), "flash.boardSaved");
 }

@@ -9,6 +9,9 @@ import * as F from "@/lib/feature-services";
 import * as M from "@/lib/more-services";
 import { HealthView } from "@/components/HealthView";
 import { BagEditor } from "@/components/BagEditor";
+import { TrialCard } from "@/components/TrialCard";
+import { TrialStart } from "@/components/TrialStart";
+import * as C from "@/lib/concept-services";
 import { getDb } from "@/db";
 import { can } from "@/lib/access";
 import { requireUser } from "@/lib/session";
@@ -24,7 +27,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
   if (!(await can(db, user, "VIEW", id))) notFound();
   const { student, cls } = await S.getStudent(db, id);
   const canEdit = await can(db, user, "EDIT_PLAN", id);
-  const [moods, scales, schedule, series, plans, techniques, checks, proposals, health, bag] = await Promise.all([
+  const [moods, scales, schedule, series, plans, techniques, checks, proposals, health, bag, tried] = await Promise.all([
     F.moodsOf(db, id, D.addDays(S.today(), -6)),
     F.scalesOf(db, user, id),
     canEdit ? F.scheduleOf(db, id) : Promise.resolve([]),
@@ -35,7 +38,10 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
     canEdit ? M.proposalsOf(db, user, id) : Promise.resolve([]),
     canEdit ? M.healthOf(db, user, id) : Promise.resolve(null),
     canEdit ? M.bagFor(db, id, S.today()) : Promise.resolve(null),
+    canEdit ? C.trialsOf(db, user, id) : Promise.resolve([]),
   ]);
+  const running = tried.find((x) => x.trial.status === "RUNNING");
+  const done = tried.filter((x) => x.trial.status === "DONE");
   const current = D.planForDate(plans, S.today());
   const base = plans.find((p) => p.status === "PENDING") ?? plans.find((p) => p.status === "ACTIVE") ?? current ?? null;
   const hints = series.goals
@@ -62,9 +68,34 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
         ))}
       </section>
 
+      {canEdit && (
+        <section className="card" id="trial">
+          <div className="row between"><h2>{t("tr.title")}</h2><span className="eyebrow">{t("tr.eyebrow")}</span></div>
+          <p className="muted small">{t("tr.lead")}</p>
+          {running ? (
+            <TrialCard v={running} manage />
+          ) : (
+            <TrialStart
+              studentId={id}
+              techniques={techniques.map((tq) => ({ id: tq.id, title: tq.title }))}
+              goals={(current?.goals ?? []).filter((g) => g.place === "SCHOOL").map((g) => ({ lineageId: g.lineageId, text: g.adultText }))}
+            />
+          )}
+          {done.length > 0 && (
+            <details>
+              <summary><b>{t("tr.history", { n: done.length })}</b></summary>
+              <div className="list" style={{ marginTop: 12 }}>
+                {done.map((v) => <TrialCard key={v.trial.id} v={v} manage={false} />)}
+              </div>
+            </details>
+          )}
+        </section>
+      )}
+
       <section className="card">
         <div className="row">
           <Link className="btn" href={`/report/${id}`}>{t("rp.link")}</Link>
+          <Link className="btn" href={`/passport/${id}`}>{t("pp.link")}</Link>
           <Link className="btn" href={`/chat/${id}`}>{t("chat.open")}</Link>
           {canEdit && <Link className="btn" href={`/stories/${id}`}>{t("story.manage")}</Link>}
         </div>
