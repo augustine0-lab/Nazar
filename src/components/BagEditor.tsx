@@ -1,6 +1,6 @@
 import { ActionForm } from "./ActionForm";
 import { deleteBagItemAction, saveBagItemAction } from "@/app/actions";
-import { BAG_ICONS, MAX_BAG_ITEMS } from "@/lib/domain";
+import { BAG_ICONS, MAX_BAG_ITEMS, scanThingOf } from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
 
 /** Adults list what goes into the bag every evening. */
@@ -9,12 +9,16 @@ export async function BagEditor({ studentId, items }: { studentId: string; items
   return (
     <div className="stack">
       <p className="muted small">{t("bag.editorHint")}</p>
+      <p className="muted small">{t("scan.editorHint")}</p>
       {items.length ? (
         <div className="list">
           {items.map((it) => (
             <div key={it.id} className="sched-edit bag-edit">
               <span aria-hidden="true" style={{ fontSize: "1.6rem" }}>{it.icon}</span>
-              <span>{L(it.title)}</span>
+              <span>
+                {L(it.title)}
+                {scanThingOf([L(it.title), it.title], it.icon) && <> <span className="pill">{t("scan.camera")}</span></>}
+              </span>
               <ActionForm action={deleteBagItemAction}>
                 <input type="hidden" name="studentId" value={studentId} />
                 <input type="hidden" name="itemId" value={it.id} />

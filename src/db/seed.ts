@@ -363,7 +363,7 @@ function seedMore({ db, todayDate, demoDay, rand, ids }: {
     authorId: saule,
   }).run();
 
-  const bag: [string, string][] = [["📚", "books"], ["📓", "diary"], ["✏️", "pencil"], ["👟", "shoes"], ["💧", "water"]];
+  const bag: [string, string][] = [["📚", "books"], ["📓", "diary"], ["✏️", "pencil"], ["👟", "shoes"], ["💧", "water"], ["✂️", "scissors"]];
   bag.forEach(([icon, key], position) => {
     const id = crypto.randomUUID();
     db.insert(s.bagItems).values({ id, studentId: miras, title: `@demo.bag.${key}`, icon, position }).run();

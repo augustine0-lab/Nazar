@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FaceLandmarker } from "@mediapipe/tasks-vision";
+import { loadFaceLandmarker } from "../vision";
 import {
   CALIBRATION_MAX_MS,
   GAZE_START,
@@ -21,27 +22,6 @@ export type GazeError = "unsupported" | "denied" | "nocamera" | "noface" | "load
 
 /** Frames per second the face model looks at: enough to notice a turn, light on a school laptop. */
 const FPS = 12;
-const BASE = "/gaze";
-
-// One model per page, loaded on first use and kept while the page is open.
-let landmarker: Promise<FaceLandmarker> | null = null;
-function loadLandmarker(): Promise<FaceLandmarker> {
-  landmarker ??= (async () => {
-    const { FaceLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
-    const files = await FilesetResolver.forVisionTasks(`${BASE}/wasm`);
-    const make = (delegate: "GPU" | "CPU") =>
-      FaceLandmarker.createFromOptions(files, {
-        baseOptions: { modelAssetPath: `${BASE}/face_landmarker.task`, delegate },
-        runningMode: "VIDEO",
-        numFaces: 1,
-      });
-    return make("GPU").catch(() => make("CPU"));
-  })().catch((e) => {
-    landmarker = null;
-    throw e;
-  });
-  return landmarker;
-}
 
 /**
  * The camera and the on-device face model, for one page. `start` asks for the camera, loads the model,
@@ -138,7 +118,7 @@ export function useGaze(field: GazeField) {
     try {
       const [media, model] = await Promise.all([
         navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, audio: false }),
-        loadLandmarker(),
+        loadFaceLandmarker(),
       ]);
       if (run.current !== id) {
         media.getTracks().forEach((t) => t.stop());
