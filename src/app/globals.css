@@ -399,6 +399,30 @@ legend { padding: 0; margin-bottom: 6px; }
 .lt:fullscreen .lt-pic { height: 52vh; }
 .lt:fullscreen .lt-text p { font-size: 2rem; }
 
+/* «Взгляд Nazar»: the text waits while the reader looks away */
+.lt-text p span { transition: color .4s, background-color .4s, opacity .4s, box-shadow .4s; }
+.lt-text.held p span:not(.hold) { opacity: 0.4; }
+.lt-text p span.hold { background: var(--star-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--star) 70%, transparent); }
+.lt-text.back p span.hold { animation: gz-pulse .7s ease 2; }
+.lt-wait { align-self: flex-start; margin: 0; padding: 6px 14px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-size: 0.95rem; animation: lt-fade .4s ease both; }
+.gz-on { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gz-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; transition: background-color .3s; }
+.gz-dot.yes { background: var(--good); }
+.gz-dot.no { background: var(--star); }
+.gz-panel { order: 99; flex: 1 1 100%; max-width: 40rem; margin: 0 auto; padding: 16px 18px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.gz-panel h3 { margin: 0; }
+.gz-points { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+.gz-calib { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 16px; text-align: center; background: color-mix(in srgb, var(--surface) 94%, transparent); animation: lt-fade .3s ease both; }
+.gz-calib-text { max-width: 26rem; font-size: 1.1rem; line-height: 1.5; }
+.gz-target { --p: 0; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--line) 0); }
+.gz-target::before, .gz-target::after { content: ""; grid-area: 1 / 1; border-radius: 50%; }
+.gz-target::before { width: 64px; height: 64px; background: var(--surface); }
+.gz-target::after { width: 16px; height: 16px; background: var(--fg); }
+.gz-video { position: fixed; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.gz-video.show { left: auto; top: auto; right: 16px; bottom: 16px; width: 160px; height: 120px; opacity: 1; z-index: 61; border-radius: 12px; object-fit: cover; transform: scaleX(-1); box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5); }
+@keyframes gz-pulse { 0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--star) 70%, transparent); } 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--star) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .lt-text.back p span.hold, .gz-calib { animation: none; } }
+
 .scene .scene-zoom { transform-origin: 50% 60%; animation: lt-zoom 40s ease-out both; }
 .scene .sc-drift { animation: sc-drift 90s linear infinite alternate; }
 .scene .sc-bob { animation: sc-bob 5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
