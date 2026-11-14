@@ -17,6 +17,9 @@ import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import * as X from "@/lib/flex-services";
+import { StartDice } from "@/components/flex/StartDice";
+import { DealBadge } from "@/components/flex/Deals";
 
 export default async function StudentHome() {
   const user = await requireUser("STUDENT");
@@ -42,6 +45,8 @@ export default async function StudentHome() {
     M.bagFor(db, me.id, S.today()),
     M.savingGoal(db, me.id),
   ]);
+  const deals = await X.dealsFor(db, hw.map((h) => h.id));
+  const dealOf = (id: string) => deals.filter((d) => d.homeworkId === id).at(-1);
   const evening = S.nowLocal().hour >= D.BAG_EVENING_HOUR;
   const bagCard = bag.items.length > 0 && (
     <section className="card">
@@ -108,13 +113,14 @@ export default async function StudentHome() {
               const done = h.steps.filter((s) => s.doneAt).length;
               return (
                 <Link key={h.id} href={`/student/homework/${h.id}`} className="list-link">
-                  <span><b>{L(h.subject)}</b> · {L(h.title)}</span>
+                  <span><b>{L(h.subject)}</b> · {L(h.title)} <DealBadge deal={dealOf(h.id)} /></span>
                   <span className={`pill ${done === h.steps.length ? "good" : ""}`}>{done === h.steps.length ? t("st.done") : t("st.progress", { done, n: h.steps.length })}</span>
                 </Link>
               );
             })}
             {!hw.length && <p className="muted">{t("st.noHw")}</p>}
           </div>
+          <StartDice options={D.startOptions(hw).map((o) => ({ ...o, subject: L(o.subject), title: L(o.title), step: L(o.step) }))} />
           <details>
             <summary className="muted small">{t("st.addSelf")}</summary>
             <div style={{ marginTop: 12 }}><HomeworkForm studentId={me.id} defaultDue={D.nextSchoolDay(S.today())} /></div>

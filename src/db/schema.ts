@@ -188,6 +188,9 @@ export const homework = sqliteTable("homework", {
   title: text("title").notNull(),
   dueDate: text("due_date").notNull(),
   authorId: text("author_id").notNull().references(() => users.id),
+  // The author's estimate and, once done, how long it really took (entered by the child or a parent).
+  estMinutes: integer("est_minutes"),
+  actualMinutes: integer("actual_minutes"),
   createdAt: createdAt(),
 });
 
@@ -208,6 +211,8 @@ export const selfChecks = sqliteTable(
     date: text("date").notNull(),
     onTask: integer("on_task", { mode: "boolean" }).notNull(),
     starAwarded: integer("star_awarded", { mode: "boolean" }).notNull(),
+    // Whether the child's own background sound was playing; null where the player was not on the page.
+    withNoise: integer("with_noise", { mode: "boolean" }),
     createdAt: createdAt(),
   },
   (t) => [index("self_checks_student_date_idx").on(t.studentId, t.date)],
@@ -554,3 +559,60 @@ export const roomSettings = sqliteTable("room_settings", {
   changedById: text("changed_by_id").notNull().references(() => users.id),
   changedAt: integer("changed_at", { mode: "timestamp_ms" }).notNull(),
 });
+
+/* ---------- homework that fits the child ---------- */
+
+export const DEAL_OPTIONS = ["HALF_HARDER", "VOICE", "DRAW", "SPLIT", "LATER", "OWN"] as const;
+export const DEAL_STATUS = ["PROPOSED", "COUNTERED", "ACCEPTED", "DECLINED"] as const;
+
+/** A child offers the author of a task a different way to do it; the author accepts, declines or counters. */
+export const homeworkDeals = sqliteTable(
+  "homework_deals",
+  {
+    id: id(),
+    homeworkId: text("homework_id").notNull().references(() => homework.id, { onDelete: "cascade" }),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    option: text("option", { enum: DEAL_OPTIONS }).notNull(),
+    note: text("note").notNull().default(""),
+    status: text("status", { enum: DEAL_STATUS }).notNull(),
+    counterOption: text("counter_option", { enum: DEAL_OPTIONS }),
+    decidedById: text("decided_by_id").references(() => users.id),
+    decidedAt: integer("decided_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("homework_deals_hw_idx").on(t.homeworkId)],
+);
+
+export const SOUNDS = ["white", "pink", "brown", "rain"] as const;
+
+/** The child's experiment with a background sound: days with and without it alternate. */
+export const soundTrials = sqliteTable("sound_trials", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  sound: text("sound", { enum: SOUNDS }).notNull(),
+  startedOn: text("started_on").notNull(),
+  createdAt: createdAt(),
+});
+
+/** A simple plan of the classroom: rows of desks from the board, columns from the windows. */
+export const classLayouts = sqliteTable("class_layouts", {
+  classId: text("class_id").primaryKey().references(() => classGroups.id, { onDelete: "cascade" }),
+  rows: integer("rows").notNull(),
+  cols: integer("cols").notNull(),
+  windowSide: text("window_side", { enum: ["LEFT", "RIGHT"] }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+});
+
+/** Where the child sits from a given day; the seat holds until the next row. */
+export const seatings = sqliteTable(
+  "seatings",
+  {
+    id: id(),
+    studentId: text("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+    row: integer("row").notNull(),
+    col: integer("col").notNull(),
+    fromDate: text("from_date").notNull(),
+    authorId: text("author_id").notNull().references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("seatings_student_date_idx").on(t.studentId, t.fromDate)],
+);

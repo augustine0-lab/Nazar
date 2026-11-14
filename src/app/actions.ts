@@ -14,6 +14,7 @@ import * as M from "@/lib/more-services";
 import * as C from "@/lib/concept-services";
 import * as R from "@/lib/reading-services";
 import * as Q from "@/lib/room-services";
+import * as X from "@/lib/flex-services";
 import { roomHub } from "@/lib/room/hub";
 import { flushOutbox } from "@/lib/mailer";
 import { demoEnabled } from "@/lib/demo-mode";
@@ -151,26 +152,43 @@ export async function requestRewardAction(_: ActionState, fd: FormData): Promise
 /* ---------- homework ---------- */
 
 export async function createHomeworkAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(
-    (a) =>
-      S.createHomework(getDb(), a, {
-        studentId: str(fd, "studentId"),
-        subject: str(fd, "subject"),
-        title: str(fd, "title"),
-        dueDate: str(fd, "dueDate"),
-        steps: str(fd, "steps").split("\n"),
-      }),
-    "flash.hwAdded",
-  );
+  const est = str(fd, "estMinutes").trim();
+  const input = {
+    studentId: str(fd, "studentId"),
+    subject: str(fd, "subject"),
+    title: str(fd, "title"),
+    dueDate: str(fd, "dueDate"),
+    steps: str(fd, "steps").split("\n"),
+    estMinutes: est ? Number(est) : null,
+  };
+  let heavy: Awaited<ReturnType<typeof X.overloadOf>> = null;
+  const res = await run(async (a) => {
+    await S.createHomework(getDb(), a, input);
+    heavy = await X.overloadOf(getDb(), input.studentId, input.dueDate);
+  }, null, undefined, false);
+  if (res?.error) return res;
+  // The ceiling warns and never blocks: the adult who adds the task decides.
+  const { lang, t } = await getT();
+  const h = heavy as Awaited<ReturnType<typeof X.overloadOf>>;
+  const text = h
+    ? t("flash.hwHeavy", { date: formatDate(h.evening.dueDate, lang), min: h.evening.likelyMinutes ?? h.evening.estMinutes, norm: h.norm })
+    : t("flash.hwAdded");
+  await setFlash(text);
+  return { ok: text };
 }
 
 export async function setStepDoneAction(stepId: string, done: boolean): Promise<ActionState> {
   return run((a) => S.setStepDone(getDb(), a, { stepId, done }), done ? "flash.stepDone" : "flash.stepReopened", undefined, false);
 }
 
-export async function selfCheckAction(studentId: string, homeworkId: string | null, onTask: boolean): Promise<{ starAwarded: boolean } | { error: string }> {
+export async function selfCheckAction(
+  studentId: string,
+  homeworkId: string | null,
+  onTask: boolean,
+  withNoise: boolean | null = null,
+): Promise<{ starAwarded: boolean } | { error: string }> {
   try {
-    return await S.recordSelfCheck(getDb(), await actor(), { studentId, homeworkId, onTask });
+    return await S.recordSelfCheck(getDb(), await actor(), { studentId, homeworkId, onTask, withNoise });
   } catch (e) {
     if (e instanceof S.UserError || e instanceof AccessDenied) {
       const { lang, t } = await getT();
@@ -499,4 +517,51 @@ export async function setRoomAction(_: ActionState, fd: FormData): Promise<Actio
     roomHub().applyParentChoice(input.studentId, res.choice);
     roomHub().setFreeAllowed(res.classId, res.freeAllowed);
   }, enabled ? "flash.roomSaved" : "flash.roomOff");
+}
+
+/* ---------- homework that fits the child ---------- */
+
+export async function offerDealAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => X.offerDeal(getDb(), a, { homeworkId: str(fd, "homeworkId"), option: str(fd, "option"), note: str(fd, "note") }), "flash.dealSent");
+}
+
+export async function answerDealAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const answer = str(fd, "answer");
+  if (answer !== "ACCEPT" && answer !== "DECLINE" && answer !== "COUNTER") return { error: (await getT()).t("err.fields") };
+  const ok: MsgKey = answer === "ACCEPT" ? "flash.dealAccepted" : answer === "DECLINE" ? "flash.dealDeclined" : "flash.dealCountered";
+  return run((a) => X.answerDeal(getDb(), a, { dealId: str(fd, "dealId"), answer, counter: str(fd, "counter") }), ok);
+}
+
+export async function replyCounterAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const accept = str(fd, "accept") === "yes";
+  return run((a) => X.replyToCounter(getDb(), a, { dealId: str(fd, "dealId"), accept }), accept ? "flash.dealAccepted" : "flash.dealDeclined");
+}
+
+export async function setActualMinutesAction(homeworkId: string, minutes: number): Promise<ActionState> {
+  return run((a) => X.setActualMinutes(getDb(), a, { homeworkId, minutes }), "flash.actualSaved");
+}
+
+export async function setActualMinutesFormAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => X.setActualMinutes(getDb(), a, { homeworkId: str(fd, "homeworkId"), minutes: int(fd, "minutes") || 0 }), "flash.actualSaved");
+}
+
+export async function startSoundAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => X.startSoundTrial(getDb(), a, { studentId: str(fd, "studentId"), sound: str(fd, "sound") }), "flash.soundStarted");
+}
+
+export async function stopSoundAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run((a) => X.stopSoundTrial(getDb(), a, { studentId: str(fd, "studentId") }), "flash.soundStopped");
+}
+
+export async function saveLayoutAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(
+    (a) => X.saveLayout(getDb(), a, { studentId: str(fd, "studentId"), rows: int(fd, "rows"), cols: int(fd, "cols"), windowSide: str(fd, "windowSide") }),
+    "flash.layoutSaved",
+  );
+}
+
+export async function moveSeatAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  // Each place of the plan is a button whose value is "row-col".
+  const [row, col] = str(fd, "pos").split("-").map((n) => Number.parseInt(n, 10));
+  return run((a) => X.moveSeat(getDb(), a, { studentId: str(fd, "studentId"), row, col }), "flash.seatMoved");
 }

@@ -378,7 +378,7 @@ export const MAX_STEPS = 12;
 export async function createHomework(
   db: DB,
   actor: Actor,
-  input: { studentId: string; subject: string; title: string; dueDate: string; steps: string[] },
+  input: { studentId: string; subject: string; title: string; dueDate: string; steps: string[]; estMinutes?: number | null },
 ) {
   await assertCan(db, actor, "CREATE_HOMEWORK", input.studentId);
   const steps = input.steps.map((s) => s.trim()).filter(Boolean);
@@ -386,9 +386,11 @@ export async function createHomework(
   if (!steps.length) throw userError("err.hwSteps");
   if (steps.length > MAX_STEPS) throw userError("err.hwMaxSteps", { max: MAX_STEPS });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) throw userError("err.hwDue");
+  const est = input.estMinutes ?? null;
+  if (est !== null && (!Number.isInteger(est) || est < D.EST_MIN || est > D.EST_MAX)) throw userError("err.hwEst", { min: D.EST_MIN, max: D.EST_MAX });
   const id = crypto.randomUUID();
   db.transaction((tx) => {
-    tx.insert(homework).values({ id, studentId: input.studentId, subject: input.subject.trim(), title: input.title.trim(), dueDate: input.dueDate, authorId: actor.id }).run();
+    tx.insert(homework).values({ id, studentId: input.studentId, subject: input.subject.trim(), title: input.title.trim(), dueDate: input.dueDate, authorId: actor.id, estMinutes: est }).run();
     steps.forEach((text, position) => tx.insert(homeworkSteps).values({ homeworkId: id, text, position }).run());
   });
   audit(db, actor, "homework.create", input.studentId, { homeworkId: id });
@@ -406,12 +408,12 @@ export async function setStepDone(db: DB, actor: Actor, input: { stepId: string;
   db.update(homeworkSteps).set({ doneAt: input.done ? new Date() : null }).where(eq(homeworkSteps.id, input.stepId)).run();
 }
 
-export async function recordSelfCheck(db: DB, actor: Actor, input: { studentId: string; homeworkId: string | null; onTask: boolean }) {
+export async function recordSelfCheck(db: DB, actor: Actor, input: { studentId: string; homeworkId: string | null; onTask: boolean; withNoise?: boolean | null }) {
   await assertCan(db, actor, "DO_HOMEWORK", input.studentId);
   const date = today();
   const { selfCheckStarsToday } = await stars(db, input.studentId, date);
   const starAwarded = D.selfCheckEarnsStar(input.onTask, selfCheckStarsToday);
-  db.insert(selfChecks).values({ studentId: input.studentId, homeworkId: input.homeworkId, date, onTask: input.onTask, starAwarded }).run();
+  db.insert(selfChecks).values({ studentId: input.studentId, homeworkId: input.homeworkId, date, onTask: input.onTask, starAwarded, withNoise: input.withNoise ?? null }).run();
   return { starAwarded };
 }
 

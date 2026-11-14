@@ -1,6 +1,7 @@
 import { ActionForm } from "./ActionForm";
 import { createHomeworkAction } from "@/app/actions";
 import { getT } from "@/lib/i18n/server";
+import { EST_MAX, EST_MIN } from "@/lib/domain";
 
 export async function HomeworkForm({ studentId, defaultDue }: { studentId: string; defaultDue: string }) {
   const { t } = await getT();
@@ -11,6 +12,7 @@ export async function HomeworkForm({ studentId, defaultDue }: { studentId: strin
         <label>{t("hw.subject")}<input name="subject" required placeholder={t("hw.subjectExample")} /></label>
         <label>{t("hw.task")}<input name="title" required placeholder={t("hw.taskExample")} /></label>
         <label>{t("hw.due")}<input name="dueDate" type="date" defaultValue={defaultDue} required /></label>
+        <label>{t("hw.est")}<input name="estMinutes" type="number" inputMode="numeric" min={EST_MIN} max={EST_MAX} step={5} placeholder={t("hw.estPh")} /></label>
       </div>
       <label>
         {t("hw.steps")}

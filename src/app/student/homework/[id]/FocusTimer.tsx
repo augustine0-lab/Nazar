@@ -5,6 +5,7 @@ import { selfCheckAction } from "@/app/actions";
 import { exerciseForCycle, selfCheckAt, timerState } from "@/lib/domain";
 import { BREAK_EMOJI } from "@/lib/icons";
 import { useI18n } from "@/lib/i18n/client";
+import { isNoisePlaying } from "@/lib/sound-state";
 
 const CIRC = 2 * Math.PI * 60;
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -52,7 +53,7 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
 
   async function answer(onTask: boolean) {
     setAsk(false);
-    const res = await selfCheckAction(studentId, homeworkId, onTask);
+    const res = await selfCheckAction(studentId, homeworkId, onTask, isNoisePlaying());
     if ("error" in res) setMessage(res.error);
     else setMessage(onTask ? (res.starAwarded ? t("tm.starAwarded") : t("tm.good")) : t("tm.fine"));
   }

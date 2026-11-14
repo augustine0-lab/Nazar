@@ -18,6 +18,9 @@ import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import * as X from "@/lib/flex-services";
+import { LoadCard } from "@/components/flex/LoadCard";
+import { SoundCard } from "@/components/flex/SoundCard";
 
 export default async function PsychStudent({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("PSYCHOLOGIST");
@@ -27,6 +30,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
   if (!(await can(db, user, "VIEW", id))) notFound();
   const { student, cls } = await S.getStudent(db, id);
   const canEdit = await can(db, user, "EDIT_PLAN", id);
+  const [load, sound] = await Promise.all([X.loadOf(db, id), X.soundReport(db, user, id)]);
   const [moods, scales, schedule, series, plans, techniques, checks, proposals, health, bag, tried] = await Promise.all([
     F.moodsOf(db, id, D.addDays(S.today(), -6)),
     F.scalesOf(db, user, id),
@@ -203,6 +207,16 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
           </table>
         </div>
       </section>
+      <section className="card">
+        <h2>{t("load.title")}</h2>
+        <LoadCard load={load} />
+      </section>
+      {sound && (
+        <section className="card">
+          <h2>🎧 {t("snd.trialTitle")}</h2>
+          <SoundCard studentId={id} report={sound} manage={false} />
+        </section>
+      )}
     </Shell>
   );
 }

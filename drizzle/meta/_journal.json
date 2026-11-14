@@ -43,6 +43,13 @@
       "when": 1794660059121,
       "tag": "0005_room",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794666500478,
+      "tag": "0006_flex",
+      "breakpoints": true
     }
   ]
 }
