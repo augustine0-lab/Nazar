@@ -492,3 +492,50 @@ legend { padding: 0; margin-bottom: 6px; }
 @keyframes room-pop { 0% { transform: translateY(20px) scale(0.6); opacity: 0; } 20% { opacity: 1; transform: translateY(0) scale(1.1); } 100% { transform: translateY(-60px) scale(1); opacity: 0; } }
 .room-caption { padding: 10px 12px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .room-tile-actions { padding: 8px 12px 12px; min-height: 52px; gap: 6px; }
+
+/* ---------- homework that fits the child ---------- */
+.chip.on, .chip[aria-pressed="true"], .chip[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+/* start dice */
+.dice-btn { align-self: flex-start; border-style: dashed; }
+.dice-face { font-size: 1.4rem; display: inline-block; line-height: 1; }
+.dice-face.spin { animation: dice-spin 0.18s linear infinite; font-size: 2rem; }
+@keyframes dice-spin { from { transform: rotate(0deg); } to { transform: rotate(90deg); } }
+.dice-rolling { display: flex; align-items: center; gap: 10px; }
+.dice-result { gap: 6px; padding: 14px; border-radius: 12px; background: var(--accent-soft); }
+.starter { border-color: var(--accent); }
+.starter-time { font-family: var(--font-display); font-size: 1.6rem; }
+@media (prefers-reduced-motion: reduce) { .dice-face.spin { animation: none; } }
+
+/* my sound */
+.sound input[type="range"] { width: 140px; accent-color: var(--accent); }
+
+/* deals */
+.deal { display: flex; gap: 12px; align-items: flex-start; }
+.deal-icon { font-size: 1.5rem; line-height: 1; }
+.deal-options { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.deal-answer select { width: auto; max-width: 100%; }
+.deal-options legend { padding: 0; margin-bottom: 6px; }
+
+/* homework ceiling */
+.load { display: flex; flex-direction: column; gap: 10px; }
+.load-row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 4px 12px; align-items: center; }
+.load-num { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.load-track { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); overflow: visible; }
+.load-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
+.load-track i.est { background: var(--accent); }
+.load-track i.likely { background: repeating-linear-gradient(135deg, var(--star-soft) 0 6px, var(--star-fill) 6px 8px); opacity: 0.9; }
+.load-track .norm { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); border-radius: 1px; }
+@media (max-width: 480px) { .load-row { grid-template-columns: 1fr; } .load-num { grid-column: 1; } }
+
+/* where I sit best */
+.classroom { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: var(--surface-2); position: relative; }
+.classroom.win-left { border-left: 6px solid #9cc7e8; }
+.classroom.win-right { border-right: 6px solid #9cc7e8; }
+.classroom-board { text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--accent-fg); background: var(--accent); border-radius: 8px; padding: 6px; margin: 0 15%; }
+.classroom-grid { display: grid; gap: 10px; }
+.desk { font: inherit; min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); cursor: pointer; }
+.desk:hover { border-color: var(--accent); }
+.desk.was { background: var(--star-soft); color: var(--star); }
+.desk.here { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-size: 1.05rem; }
+.classroom-legend { display: flex; justify-content: space-between; gap: 12px; }

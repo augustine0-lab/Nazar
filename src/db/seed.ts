@@ -215,12 +215,12 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
   db.insert(s.rewardRequests).values({ rewardId: game, studentId: miras, status: "PENDING" }).run();
 
   const hwId = crypto.randomUUID();
-  db.insert(s.homework).values({ id: hwId, studentId: miras, subject: "@demo.hw.math", title: "@demo.hw.mathTitle", dueDate: D.nextSchoolDay(demoDay), authorId: aigul }).run();
+  db.insert(s.homework).values({ id: hwId, studentId: miras, subject: "@demo.hw.math", title: "@demo.hw.mathTitle", dueDate: D.nextSchoolDay(demoDay), authorId: aigul, estMinutes: 25 }).run();
   ["math.s1", "math.s2", "math.s3", "math.s4", "math.s5", "math.s6"].map((k) => `@demo.hw.${k}`).forEach(
     (text, position) => db.insert(s.homeworkSteps).values({ homeworkId: hwId, text, position, doneAt: position === 0 ? new Date() : null }).run(),
   );
   const hw2 = crypto.randomUUID();
-  db.insert(s.homework).values({ id: hw2, studentId: miras, subject: "@demo.hw.lang", title: "@demo.hw.langTitle", dueDate: D.nextSchoolDay(demoDay), authorId: gulnar }).run();
+  db.insert(s.homework).values({ id: hw2, studentId: miras, subject: "@demo.hw.lang", title: "@demo.hw.langTitle", dueDate: D.nextSchoolDay(demoDay), authorId: gulnar, estMinutes: 20 }).run();
   ["lang.s1", "lang.s2", "lang.s3", "lang.s4", "lang.s5"].map((k) => `@demo.hw.${k}`).forEach(
     (text, position) => db.insert(s.homeworkSteps).values({ homeworkId: hw2, text, position }).run(),
   );
@@ -233,6 +233,8 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
     fourWeeksAgo,
     ids: { aigul, saule, miras, aliya, class3b, chunk: techniqueIds[3], move: techniqueIds[5], mirasStart: mishaPlan.goalIds[0], aliyaStay: anyaG1 },
   });
+
+  seedFlex({ db, demoDay, fourWeeksAgo, ids: { aigul, nurlan, miras, aliya, class3b, mathHw: hwId } });
 
   // Quiet room: both parents of 3 «Б» turned it on with the camera; only Miras's mother agreed to a room without an adult,
   // so the room opens when the teacher or the psychologist leads it. Sanzhar's mother gave no consent, so no room for him.
@@ -503,4 +505,68 @@ function seedExtras({ db, todayDate, demoDay, rand, ids }: {
     db.insert(s.scaleResponses).values({ studentId: miras, respondentId, respondentRole, date: D.addDays(demoDay, -daysAgo), answers }).run();
   form(aigul, "TEACHER", [2, 3, 2, 2, 3, 2, 1, 3, 2, 1, 1, 0, 1, 1, 1, 2, 1, 2], 6);
   form(gulnar, "PARENT", [2, 2, 1, 2, 2, 3, 2, 2, 3, 2, 2, 1, 2, 3, 2, 2, 2, 2], 5);
+}
+
+/**
+ * Demo data for homework that fits the child. Miras: teachers' estimates and the real time of past tasks
+ * (about twice as long), so tomorrow's evening goes over the norm; a deal waiting for the teacher;
+ * the own-sound experiment on its fifth day; two seats in 3 «Б» to compare.
+ */
+function seedFlex({ db, demoDay, fourWeeksAgo, ids }: {
+  db: DB;
+  demoDay: string;
+  fourWeeksAgo: string;
+  ids: { aigul: string; nurlan: string; miras: string; aliya: string; class3b: string; mathHw: string };
+}) {
+  const { aigul, miras, class3b, mathHw } = ids;
+  const due = D.nextSchoolDay(demoDay);
+
+  // A third task for tomorrow, so the evening is full: 25 + 20 + 30 minutes by the estimates.
+  const world = crypto.randomUUID();
+  db.insert(s.homework).values({ id: world, studentId: miras, subject: "@demo.flex.world", title: "@demo.flex.worldTitle", dueDate: due, authorId: aigul, estMinutes: 30 }).run();
+  ["s1", "s2", "s3"].forEach((k, position) => db.insert(s.homeworkSteps).values({ homeworkId: world, text: `@demo.flex.world.${k}`, position }).run());
+
+  // Past tasks with the estimate and the real time: Miras needs about 2.1 times longer.
+  const past: [string, string, number, number][] = [
+    ["@demo.hw.math", "@demo.flex.past.math", 20, 45],
+    ["@demo.hw.lang", "@demo.flex.past.lang", 15, 30],
+    ["@demo.flex.world", "@demo.flex.past.world", 20, 40],
+    ["@demo.hw.math", "@demo.flex.past.math", 25, 50],
+    ["@demo.hw.lang", "@demo.flex.past.lang", 20, 45],
+    ["@demo.hw.math", "@demo.flex.past.math", 20, 40],
+  ];
+  const days = D.schoolDaysBefore(demoDay, 12);
+  const pastIds = past.map(([subject, title, est, actual], i) => {
+    const id = crypto.randomUUID();
+    const dueDate = days[i * 2 + 1];
+    db.insert(s.homework).values({ id, studentId: miras, subject, title, dueDate, authorId: aigul, estMinutes: est, actualMinutes: actual }).run();
+    ["@demo.flex.past.s1", "@demo.flex.past.s2"].forEach((text, position) =>
+      db.insert(s.homeworkSteps).values({ homeworkId: id, text, position, doneAt: new Date(D.addDays(dueDate, -1) + "T14:00:00Z") }).run(),
+    );
+    return id;
+  });
+
+  // Deals: one agreed last week, one waiting for the teacher's answer now.
+  db.insert(s.homeworkDeals).values([
+    { homeworkId: pastIds[4], studentId: miras, option: "VOICE", status: "ACCEPTED", decidedById: aigul, decidedAt: new Date(days[8] + "T16:00:00Z") },
+    { homeworkId: mathHw, studentId: miras, option: "HALF_HARDER", note: "@demo.flex.dealNote", status: "PROPOSED" },
+  ]).run();
+
+  // The own-sound experiment started four school days ago with rain: days alternate, so the demo school day is a day with sound.
+  const trialDays = D.schoolDaysBefore(demoDay, 4);
+  db.insert(s.soundTrials).values({ studentId: miras, sound: "rain", startedOn: trialDays[0] }).run();
+  const answers: Record<number, boolean[]> = { 0: [true, true, true, false], 1: [true, false, false, true], 2: [true, true, false, true], 3: [false, true, false, false] };
+  trialDays.forEach((date, i) =>
+    answers[i].forEach((onTask, k) =>
+      db.insert(s.selfChecks).values({ studentId: miras, homeworkId: null, date, onTask, starAwarded: false, withNoise: i % 2 === 0, createdAt: new Date(date + `T1${3 + k}:10:00Z`) }).run(),
+    ),
+  );
+
+  // Where Miras sits: the back desk by the window, then the front desk next to the teacher for the last two weeks.
+  db.insert(s.classLayouts).values({ classId: class3b, rows: 5, cols: 3, windowSide: "LEFT" }).run();
+  const moved = D.schoolDaysBefore(demoDay, 9)[0];
+  db.insert(s.seatings).values([
+    { studentId: miras, row: 4, col: 0, fromDate: fourWeeksAgo, authorId: aigul },
+    { studentId: miras, row: 0, col: 1, fromDate: moved, authorId: aigul },
+  ]).run();
 }

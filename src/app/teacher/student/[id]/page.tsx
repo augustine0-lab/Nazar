@@ -14,6 +14,10 @@ import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
 import { TrialCard } from "@/components/TrialCard";
 import * as C from "@/lib/concept-services";
+import * as X from "@/lib/flex-services";
+import { HomeworkForm } from "@/components/HomeworkForm";
+import { LoadCard } from "@/components/flex/LoadCard";
+import { DealInbox } from "@/components/flex/Deals";
 
 export default async function TeacherStudent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ date?: string }> }) {
   const user = await requireUser("TEACHER");
@@ -32,6 +36,9 @@ export default async function TeacherStudent({ params, searchParams }: { params:
   const schoolGoals = sum.plan?.goals.filter((g) => g.place === "SCHOOL") ?? [];
   const lesson = date === S.today() ? D.currentLessonNo(school.bellSchedule, S.nowLocal()) : 1;
   const running = canMark ? (await C.trialsOf(db, user, id)).find((x) => x.trial.status === "RUNNING") : undefined;
+  const [load, deals, seat] = canMark
+    ? await Promise.all([X.loadOf(db, id), X.dealsToAnswer(db, user, id), X.seatReport(db, user, id)])
+    : [null, [], null];
 
   return (
     <Shell current="/teacher">
@@ -106,6 +113,38 @@ export default async function TeacherStudent({ params, searchParams }: { params:
             </ActionForm>
           </section>
         </>
+      )}
+
+      {canMark && load && (
+        <section className="card" id="deals">
+          <h2>{t("load.title")}</h2>
+          <p className="muted small">{t("load.lead")}</p>
+          <LoadCard load={load} />
+          {deals.length > 0 && (
+            <div className="stack">
+              <h3>🤝 {t("deal.inbox", { n: deals.length })}</h3>
+              <DealInbox items={deals} />
+            </div>
+          )}
+          <details>
+            <summary>{t("hw.newFor", { name: student.displayName.split(" ")[0] })}</summary>
+            <div style={{ marginTop: 12 }}><HomeworkForm studentId={id} defaultDue={D.nextSchoolDay(S.today())} /></div>
+          </details>
+        </section>
+      )}
+
+      {canMark && seat && (
+        <Link href={`/teacher/seat/${id}`} className="card list-link">
+          <span className="stack" style={{ gap: 2 }}>
+            <span><span aria-hidden="true">🪑</span> <b>{t("seat.title")}</b></span>
+            <span className="muted small">
+              {seat.current
+                ? t("seat.cardNow", { traits: D.seatTraits(seat.current.row, seat.current.col, seat.layout).map((x) => t(`seat.trait.${x}`)).join(", ") || t("seat.trait.none"), date: D.formatDate(seat.current.from, lang) })
+                : t("seat.cardNone")}
+            </span>
+          </span>
+          {seat.verdict !== "NOT_ENOUGH" && <span className={`pill ${seat.verdict === "BETTER" ? "good" : seat.verdict === "WORSE" ? "bad" : ""}`}>{t(`seat.v.short.${seat.verdict}`)}</span>}
+        </Link>
       )}
 
       <section className="card">
