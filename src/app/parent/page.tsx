@@ -16,6 +16,8 @@ import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
 import { TrialCard } from "@/components/TrialCard";
 import * as C from "@/lib/concept-services";
+import * as Q from "@/lib/room-services";
+import { setRoomAction } from "@/app/actions";
 
 export default async function ParentToday({ searchParams }: { searchParams: Promise<{ child?: string }> }) {
   const user = await requireUser("PARENT");
@@ -40,7 +42,7 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
     );
   }
 
-  const [moods, sum, week, st, requests, plans, tried] = await Promise.all([
+  const [moods, sum, week, st, requests, plans, tried, room, roomRule] = await Promise.all([
     F.moodsOf(db, child.id, D.addDays(S.today(), -6)),
     S.daySummary(db, child.id, day),
     S.weekSummary(db, child.id, D.mondayOf(day)),
@@ -48,6 +50,8 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
     S.rewardRequestsOf(db, child.id),
     S.plansOf(db, child.id),
     C.trialsOf(db, user, child.id),
+    Q.roomChoiceOf(db, child.id),
+    Q.classRoomRule(db, child.classId),
   ]);
   const running = tried.find((x) => x.trial.status === "RUNNING");
   const pendingPlan = plans.find((p) => p.status === "PENDING");
@@ -122,6 +126,22 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
           <p className="muted small">{t("tr.parentHint")}</p>
         </section>
       )}
+
+      <section className="card" id="room">
+        <div className="row between">
+          <h2>🤫 {t("room.p.title")}</h2>
+          <span className={`pill ${room.enabled ? "good" : ""}`}>{t(room.enabled ? (room.video ? "room.p.state.video" : "room.p.state.avatar") : "room.p.state.off")}</span>
+        </div>
+        <p className="muted small">{t("room.p.lead")}</p>
+        <ActionForm action={setRoomAction} className="stack">
+          <input type="hidden" name="studentId" value={child.id} />
+          <label className="room-check"><input type="checkbox" name="enabled" defaultChecked={room.enabled} /> {t("room.p.enabled", { name: child.displayName.split(" ")[0] })}</label>
+          <label className="room-check"><input type="checkbox" name="video" defaultChecked={room.video} /> {t("room.p.video")}</label>
+          <label className="room-check"><input type="checkbox" name="unsupervised" defaultChecked={room.unsupervised} /> {t("room.p.unsupervised")}</label>
+          <p className="muted small">{t("room.p.unsupervisedHint")} {t("room.classRule", { enabled: roomRule.enabled, pupils: roomRule.pupils, free: roomRule.unsupervised })}</p>
+          <div><button className="btn primary" type="submit">{t("room.p.save")}</button></div>
+        </ActionForm>
+      </section>
 
       <section className="card">
         <div className="row">

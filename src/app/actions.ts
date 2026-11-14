@@ -13,12 +13,14 @@ import * as F from "@/lib/feature-services";
 import * as M from "@/lib/more-services";
 import * as C from "@/lib/concept-services";
 import * as R from "@/lib/reading-services";
+import * as Q from "@/lib/room-services";
+import { roomHub } from "@/lib/room/hub";
 import { flushOutbox } from "@/lib/mailer";
 import { demoEnabled } from "@/lib/demo-mode";
 import { resetDemo } from "@/db/seed";
 import { LANG_COOKIE, LOCALE, isLang, msgText, type MsgKey, type Params } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
-import { APP_TZ, formatDate, PASSPORT_FIELDS, SCALE_ITEM_COUNT } from "@/lib/domain";
+import { APP_TZ, formatDate, freeRoomAllowed, PASSPORT_FIELDS, SCALE_ITEM_COUNT } from "@/lib/domain";
 
 export type ActionState = { ok?: string; error?: string } | null;
 
@@ -218,7 +220,14 @@ export async function approvePlanAction(_: ActionState, fd: FormData): Promise<A
 export async function consentAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const studentId = str(fd, "studentId");
   return str(fd, "intent") === "revoke"
-    ? run((a) => S.revokeConsent(getDb(), a, studentId), "flash.consentRevoked", { days: S.PURGE_AFTER_DAYS })
+    ? run(async (a) => {
+        const db = getDb();
+        await S.revokeConsent(db, a, studentId);
+        // Without consent the child cannot be in the quiet room either, also not in one that is open now.
+        roomHub().applyParentChoice(studentId, { enabled: false, video: false });
+        const { student } = await S.getStudent(db, studentId);
+        roomHub().setFreeAllowed(student.classId, freeRoomAllowed(await Q.classRoomRule(db, student.classId)));
+      }, "flash.consentRevoked", { days: S.PURGE_AFTER_DAYS })
     : run((a) => S.giveConsent(getDb(), a, studentId), "flash.consentSaved");
 }
 
@@ -477,4 +486,17 @@ export async function deleteReadingAction(_: ActionState, fd: FormData): Promise
   const res = await run((a) => R.deleteReading(getDb(), a, str(fd, "id")), "flash.readingDeleted");
   if (res?.ok) redirect(`/teacher/read?class=${str(fd, "classId")}`);
   return res;
+}
+
+/* ---------- quiet room ---------- */
+
+export async function setRoomAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const enabled = str(fd, "enabled") === "on";
+  const input = { studentId: str(fd, "studentId"), enabled, video: enabled && str(fd, "video") === "on", unsupervised: enabled && str(fd, "unsupervised") === "on" };
+  return run(async (a) => {
+    const res = await Q.setRoomChoice(getDb(), a, input);
+    // The choice works at once, also in a room that is open right now.
+    roomHub().applyParentChoice(input.studentId, res.choice);
+    roomHub().setFreeAllowed(res.classId, res.freeAllowed);
+  }, enabled ? "flash.roomSaved" : "flash.roomOff");
 }

@@ -81,7 +81,8 @@ export type Permission =
   | "RUN_TRIAL"
   | "VIEW_TRIAL"
   | "VIEW_PASSPORT"
-  | "EDIT_PASSPORT";
+  | "EDIT_PASSPORT"
+  | "MANAGE_ROOM";
 
 const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLOGIST">> = {
   VIEW: ["SELF", "TEACHER", "PARENT", "PSYCHOLOGIST"],
@@ -115,6 +116,8 @@ const MATRIX: Record<Permission, Array<"SELF" | "TEACHER" | "PARENT" | "PSYCHOLO
   VIEW_TRIAL: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
   VIEW_PASSPORT: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
   EDIT_PASSPORT: ["TEACHER", "PARENT", "PSYCHOLOGIST"],
+  // Only a parent decides whether the child may be in the quiet room and on camera.
+  MANAGE_ROOM: ["PARENT"],
 };
 
 // Without parental consent only the consent itself can be managed, and a parent can still download what was collected.

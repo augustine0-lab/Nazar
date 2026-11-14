@@ -123,6 +123,11 @@ export default async function StudentHome() {
 
         {!evening && bagCard}
 
+        <Link href="/room" className="card list-link">
+          <span><span aria-hidden="true">🤫</span> <b>{t("room.title")}</b></span>
+          <span className="muted small">{t("room.st.card")}</span>
+        </Link>
+
         <Link href="/student/read" className="card list-link">
           <span><span aria-hidden="true">🌅</span> <b>{t("read.title")}</b></span>
           <span className="muted small">{t("read.studentLead")}</span>

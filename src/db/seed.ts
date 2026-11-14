@@ -233,6 +233,14 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
     fourWeeksAgo,
     ids: { aigul, saule, miras, aliya, class3b, chunk: techniqueIds[3], move: techniqueIds[5], mirasStart: mishaPlan.goalIds[0], aliyaStay: anyaG1 },
   });
+
+  // Quiet room: both parents of 3 «Б» turned it on with the camera; only Miras's mother agreed to a room without an adult,
+  // so the room opens when the teacher or the psychologist leads it. Sanzhar's mother gave no consent, so no room for him.
+  const roomAt = new Date(D.addDays(demoDay, -3) + "T19:00:00Z");
+  db.insert(s.roomSettings).values([
+    { studentId: miras, enabled: true, video: true, unsupervised: true, changedById: gulnar, changedAt: roomAt },
+    { studentId: aliya, enabled: true, video: true, unsupervised: false, changedById: erlan, changedAt: roomAt },
+  ]).run();
 }
 
 /** Demo data for technique trials, Miras's passport, class-wide supports and the lesson board of 3 «Б». */
