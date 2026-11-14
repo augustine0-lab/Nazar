@@ -17,7 +17,8 @@ test("the psychologist starts a trial and the teacher sees what to do", async ({
   await card.getByLabel("Приём").selectOption({ label: "Двигательные паузы" });
   await card.getByLabel("Что именно делаем").fill("Разминка каждые 15 минут");
   await card.getByRole("button", { name: "Начать проверку" }).click();
-  await expect(card.getByText("день 1 из 10")).toBeVisible();
+  // On a weekend the trial starts on Monday, so it is still day 0 today.
+  await expect(card.getByText(/день [01] из 10/)).toBeVisible();
 
   const teacher = await browser.newPage();
   await login(teacher, "aigul");
