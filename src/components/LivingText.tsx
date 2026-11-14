@@ -5,6 +5,8 @@ import "@fontsource/pt-serif/700.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SceneArt } from "./SceneArt";
 import { SpeakButton } from "./SpeakButton";
+import { GazeControl } from "./gaze/GazeControl";
+import { useGaze } from "./gaze/useGaze";
 import { readingSeconds, sentences, type Chapter } from "@/lib/domain/reading";
 import { useI18n } from "@/lib/i18n/client";
 
@@ -15,6 +17,9 @@ const two = (n: number) => String(n).padStart(2, "0");
  * A reading in short chapters: the contents on the left with a progress line, a big picture, and one chapter
  * of text below it. Play turns the chapters by themselves at a calm pace and lights up the sentence to read now;
  * the reader can pause or jump to any chapter. Nothing starts until the reader presses play.
+ *
+ * With «Взгляд» on, the camera notices when the reader looks away: the text stops, keeps the sentence
+ * lit, and goes on from it once the reader looks back. Reading aloud waits too.
  */
 export function LivingText({ id, title, source, chapters, projector = false }: { id: string; title: string; source: string; chapters: Chapter[]; projector?: boolean }) {
   const { t } = useI18n();
@@ -27,6 +32,59 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
   const finished = i === chapters.length - 1 && elapsed >= durs[i];
+
+  const gaze = useGaze(projector ? "WIDE" : "NEAR");
+  // held: the reader looked away and the text is waiting; back: they looked back, the text goes on in a moment.
+  const [held, setHeld] = useState(false);
+  const [back, setBack] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  const wasLooking = useRef(true);
+  const resumePlay = useRef(false);
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
+  const heldRef = useRef(held);
+  heldRef.current = held;
+
+  useEffect(() => {
+    const was = wasLooking.current;
+    wasLooking.current = gaze.looking;
+    if (was === gaze.looking) return;
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
+    if (!gaze.looking) {
+      setBack(false);
+      const speaking = !!synth?.speaking && !synth.paused;
+      if (playingRef.current || speaking) {
+        resumePlay.current = playingRef.current;
+        setPlaying(false);
+        if (speaking) synth?.pause();
+        setHeld(true);
+      }
+    } else if (heldRef.current) {
+      if (synth?.paused) synth.resume();
+      setBack(true);
+      textRef.current?.querySelector(".hold")?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [gaze.looking]);
+
+  // A moment to find the line again, then the text goes on by itself.
+  useEffect(() => {
+    if (!back) return;
+    const timer = setTimeout(() => {
+      setBack(false);
+      setHeld(false);
+      if (resumePlay.current) setPlaying(true);
+    }, 1400);
+    return () => clearTimeout(timer);
+  }, [back]);
+
+  // The reader takes over, or the camera is off: nothing is waiting any more.
+  const release = () => {
+    setHeld(false);
+    setBack(false);
+  };
+  useEffect(() => {
+    if (gaze.status !== "on") release();
+  }, [gaze.status]);
 
   useEffect(() => {
     if (!playing) return;
@@ -60,10 +118,12 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
   }, [i]);
 
   const go = (k: number) => {
+    release();
     setI(Math.max(0, Math.min(chapters.length - 1, k)));
     setElapsed(0);
   };
   const toggle = () => {
+    release();
     if (finished) {
       go(0);
       setPlaying(true);
@@ -137,11 +197,16 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
         </figure>
       </div>
 
-      <div className="lt-text" key={`t${i}`} aria-live="polite">
+      <div className={`lt-text${held ? " held" : ""}${back ? " back" : ""}`} key={`t${i}`} ref={textRef}>
+        {held && (
+          <div className="lt-wait" role="status">
+            <span aria-hidden="true">👁</span> {t(back ? (projector ? "gz.backWide" : "gz.back") : projector ? "gz.heldWide" : "gz.held")}
+          </div>
+        )}
         {chapters[i].title && <h2 className="lt-ch">{chapters[i].title}</h2>}
-        <p>
+        <p aria-live="polite">
           {parts.map((s, k) => (
-            <span key={k} className={now < 0 ? "" : k === now ? "now" : k < now ? "past" : "next"}>{s} </span>
+            <span key={k} className={now < 0 ? "" : k === now ? `now${held ? " hold" : ""}` : k < now ? "past" : "next"}>{s} </span>
           ))}
         </p>
       </div>
@@ -149,6 +214,7 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
       <div className="lt-controls no-print">
         <button type="button" className="btn" onClick={() => { go(i - 1); setStarted(true); }} disabled={i === 0}>← {t("read.prev")}</button>
         <SpeakButton key={i} text={`${ch.title}. ${ch.text}`} />
+        <GazeControl gaze={gaze} wide={projector} />
         {projector && <button type="button" className="btn quiet" onClick={fullscreen}>⛶ {t("board.fullscreen")}</button>}
         {finished ? (
           <button type="button" className="btn primary" onClick={() => { go(0); setPlaying(false); setStarted(false); }}>{t("read.again")}</button>

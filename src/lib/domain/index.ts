@@ -250,3 +250,4 @@ export * from "./concepts";
 export * from "./reading";
 export * from "./room";
 export * from "./flex";
+export * from "./gaze";
