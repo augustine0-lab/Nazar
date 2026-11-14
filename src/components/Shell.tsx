@@ -18,6 +18,7 @@ const NAV: Record<Role, { href: string; label: MsgKey }[]> = {
     { href: "/teacher", label: "nav.myClass" },
     { href: "/teacher/week", label: "nav.week" },
     { href: "/teacher/class", label: "nav.classForAll" },
+    { href: "/room", label: "nav.room" },
     { href: "/chat", label: "nav.chat" },
     { href: "/techniques", label: "nav.techniques" },
     { href: "/help", label: "nav.help" },
@@ -34,6 +35,7 @@ const NAV: Record<Role, { href: string; label: MsgKey }[]> = {
   ],
   PSYCHOLOGIST: [
     { href: "/psych", label: "nav.myKids" },
+    { href: "/room", label: "nav.room" },
     { href: "/chat", label: "nav.chat" },
     { href: "/techniques", label: "nav.techniques" },
     { href: "/help", label: "nav.help" },
@@ -41,6 +43,7 @@ const NAV: Record<Role, { href: string; label: MsgKey }[]> = {
   STUDENT: [
     { href: "/student", label: "nav.myDay" },
     { href: "/student/read", label: "nav.read" },
+    { href: "/room", label: "nav.room" },
     { href: "/student/stories", label: "nav.stories" },
     { href: "/student/rewards", label: "nav.rewards" },
   ],

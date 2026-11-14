@@ -22,6 +22,7 @@ import {
   goalProposals,
   healthLogs,
   healthSettings,
+  roomSettings,
   planTechniques,
   psychAssignments,
   rewardRequests,
@@ -77,7 +78,7 @@ export async function getStudent(db: DB, studentId: string) {
 
 export async function studentsForActor(db: DB, actor: Actor) {
   const base = db
-    .select({ id: students.id, displayName: students.displayName, className: classGroups.name })
+    .select({ id: students.id, displayName: students.displayName, className: classGroups.name, classId: students.classId })
     .from(students)
     .innerJoin(classGroups, eq(classGroups.id, students.classId));
   switch (actor.role) {
@@ -544,6 +545,7 @@ export async function purgeRevokedData(db: DB, now = new Date()) {
       tx.delete(healthSettings).where(eq(healthSettings.studentId, c.studentId)).run();
       tx.delete(trials).where(eq(trials.studentId, c.studentId)).run();
       tx.delete(passports).where(eq(passports.studentId, c.studentId)).run();
+      tx.delete(roomSettings).where(eq(roomSettings.studentId, c.studentId)).run();
     });
     purged.push(c.studentId);
   }

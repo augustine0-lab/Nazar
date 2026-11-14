@@ -248,3 +248,4 @@ export * from "./extras";
 export * from "./more";
 export * from "./concepts";
 export * from "./reading";
+export * from "./room";

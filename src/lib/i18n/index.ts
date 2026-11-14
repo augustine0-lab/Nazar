@@ -11,6 +11,7 @@ import { features } from "./messages/features";
 import { more } from "./messages/more";
 import { concepts } from "./messages/concepts";
 import { reading } from "./messages/reading";
+import { room } from "./messages/room";
 
 export type Lang = "ru" | "kk";
 export const LANGS: readonly Lang[] = ["ru", "kk"];
@@ -20,7 +21,7 @@ export const LOCALE: Record<Lang, string> = { ru: "ru-RU", kk: "kk-KZ" };
 
 /** Every message exists in both languages: [russian, kazakh]. A missing translation fails the type check. */
 type Entry = readonly [ru: string, kk: string];
-const ALL = { ...common, ...errors, ...login, ...teacher, ...parent, ...student, ...psych, ...admin, ...demo, ...features, ...more, ...concepts, ...reading } satisfies Record<string, Entry>;
+const ALL = { ...common, ...errors, ...login, ...teacher, ...parent, ...student, ...psych, ...admin, ...demo, ...features, ...more, ...concepts, ...reading, ...room } satisfies Record<string, Entry>;
 
 export type MsgKey = keyof typeof ALL;
 export type Params = Record<string, string | number>;

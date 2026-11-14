@@ -540,3 +540,17 @@ export const readings = sqliteTable(
   },
   (t) => [index("readings_class_idx").on(t.classId, t.createdAt)],
 );
+
+/* ---------- quiet room: doing homework next to classmates (body doubling), only when a parent turns it on ---------- */
+
+export const roomSettings = sqliteTable("room_settings", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  // The child may enter the quiet room of their own class.
+  enabled: integer("enabled", { mode: "boolean" }).notNull(),
+  // The child may turn on the camera; without it the child is shown as an avatar.
+  video: integer("video", { mode: "boolean" }).notNull(),
+  // This parent agrees that the class may use the room without an adult. It opens only when every parent of the class agrees.
+  unsupervised: integer("unsupervised", { mode: "boolean" }).notNull(),
+  changedById: text("changed_by_id").notNull().references(() => users.id),
+  changedAt: integer("changed_at", { mode: "timestamp_ms" }).notNull(),
+});
