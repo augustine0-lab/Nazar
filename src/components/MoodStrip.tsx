@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import { MOOD_FACES } from "@/lib/icons";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
@@ -22,7 +23,7 @@ export async function MoodStrip({ moods, today }: { moods: { date: string; slot:
             return (
               <div key={d} className="cell">
                 {D.shortWeekday(d, lang)}
-                <span className="face" role="img" aria-label={a === null ? "—" : t(`mood.${Math.round(a) as 1 | 2 | 3 | 4 | 5}`)}>{a === null ? "·" : MOOD_FACES[Math.round(a) - 1]}</span>
+                <span className="face" role="img" aria-label={a === null ? "—" : t(`mood.${Math.round(a) as 1 | 2 | 3 | 4 | 5}`)}>{a === null ? "·" : <Emoji e={MOOD_FACES[Math.round(a) - 1]} />}</span>
               </div>
             );
           })}

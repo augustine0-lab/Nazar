@@ -1,5 +1,6 @@
 "use client";
 
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { useState } from "react";
 import { DICE_REROLLS, rollStart, STARTER_MINUTES, type StartOption } from "@/lib/domain";
@@ -46,7 +47,7 @@ export function StartDice({ options }: { options: StartOption[] }) {
     <div className="dice stack" aria-live="polite">
       {!pick && !rolling && (
         <button type="button" className="btn dice-btn" onClick={roll}>
-          <span aria-hidden="true" className="dice-face">🎲</span> {t("dice.button")}
+          <span aria-hidden="true" className="dice-face"><I name="dice" /></span> {t("dice.button")}
         </button>
       )}
       {rolling && (

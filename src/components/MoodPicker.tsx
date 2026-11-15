@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
 import { useState, useTransition } from "react";
 import { logMoodAction } from "@/app/actions";
 import { MOOD_FACES } from "@/lib/icons";
@@ -30,7 +31,7 @@ export function MoodPicker({ studentId, slot, initial }: { studentId: string; sl
       <div className="moods" role="group" aria-label={t("mood.title")}>
         {MOOD_FACES.map((face, i) => (
           <button key={i} type="button" aria-pressed={mood === i + 1} onClick={() => pick(i + 1)}>
-            <span className="face" aria-hidden="true">{face}</span>
+            <span className="face" aria-hidden="true"><Emoji e={face} /></span>
             <span className="lbl">{t(`mood.${(i + 1) as 1 | 2 | 3 | 4 | 5}`)}</span>
           </button>
         ))}

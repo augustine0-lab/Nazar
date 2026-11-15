@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/Shell";
@@ -41,7 +42,7 @@ export default async function StoriesEditor({ params }: { params: Promise<{ id: 
                   </ActionForm>
                 </div>
                 <ol className="small" style={{ margin: 0, paddingLeft: 20 }}>
-                  {s.steps.map((st, i) => <li key={i}><span aria-hidden="true">{st.icon}</span> {L(st.text)}</li>)}
+                  {s.steps.map((st, i) => <li key={i}><span aria-hidden="true"><Emoji e={st.icon} /></span> {L(st.text)}</li>)}
                 </ol>
               </div>
             ))}
@@ -68,7 +69,7 @@ export default async function StoriesEditor({ params }: { params: Promise<{ id: 
       <section className="card">
         <h2>{t("story.library")}</h2>
         <ul className="stack" style={{ margin: 0, paddingLeft: 20 }}>
-          {libraryStories().map((s) => <li key={s.id}><span aria-hidden="true">{s.icon}</span> {L(s.title)} <span className="muted small">· {t("story.steps", { n: s.steps.length })}</span></li>)}
+          {libraryStories().map((s) => <li key={s.id}><span aria-hidden="true"><Emoji e={s.icon} /></span> {L(s.title)} <span className="muted small">· {t("story.steps", { n: s.steps.length })}</span></li>)}
         </ul>
       </section>
     </Shell>

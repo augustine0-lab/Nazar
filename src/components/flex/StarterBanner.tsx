@@ -1,5 +1,6 @@
 "use client";
 
+import { I } from "@/components/ui/Icon";
 import { useEffect, useState } from "react";
 import { STARTER_MINUTES } from "@/lib/domain";
 import { useI18n } from "@/lib/i18n/client";
@@ -17,7 +18,7 @@ export function StarterBanner({ step }: { step: string | null }) {
   const mm = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
   return (
     <section className="card starter" role="status">
-      <span className="eyebrow">🎲 {t("starter.title", { min: STARTER_MINUTES })}</span>
+      <span className="eyebrow"><I name="dice" /> {t("starter.title", { min: STARTER_MINUTES })}</span>
       {step && <b>{step}</b>}
       {left > 0 ? (
         <div className="row">

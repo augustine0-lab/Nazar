@@ -1,5 +1,7 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
+import { Icon } from "@/components/ui/Icon";
 import { useState, useTransition } from "react";
 import { setClassSupportAction } from "@/app/actions";
 import { UDL_PRINCIPLES, UDL_SUPPORTS, udlCoverage } from "@/lib/domain/concepts";
@@ -48,12 +50,12 @@ export function UdlChecklist({ classId, enabled }: { classId: string; enabled: s
               return (
                 <li key={s.key}>
                   <button type="button" className={`sched-item ${isOn ? "done" : ""}`} aria-pressed={isOn} onClick={() => toggle(s.key)}>
-                    <span className="pic" aria-hidden="true">{s.icon}</span>
+                    <span className="pic" aria-hidden="true"><Emoji e={s.icon} /></span>
                     <span className="stack" style={{ gap: 2, textAlign: "left" }}>
                       <span className="ttl">{t(`udl.${s.key}.title` as MsgKey)}</span>
                       <span className="muted small">{t(`udl.${s.key}.body` as MsgKey)}</span>
                     </span>
-                    <span className="tick" aria-hidden="true">{isOn ? "✓" : ""}</span>
+                    <span className="tick" aria-hidden="true">{isOn ? <Icon name="check" className="ico tick-ico" /> : null}</span>
                   </button>
                 </li>
               );

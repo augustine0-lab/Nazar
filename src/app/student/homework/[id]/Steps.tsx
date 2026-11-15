@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useOptimistic, useTransition } from "react";
 import { setStepDoneAction } from "@/app/actions";
 import { useI18n } from "@/lib/i18n/client";
@@ -27,7 +28,7 @@ export function Steps({ steps }: { steps: Step[] }) {
             aria-pressed={s.done}
             onClick={() => start(async () => { toggle(s.id); await setStepDoneAction(s.id, !s.done); })}
           >
-            <span className="box" aria-hidden="true">{s.done ? "✓" : ""}</span>
+            <span className="box" aria-hidden="true">{s.done ? <Icon name="check" className="ico tick-ico" /> : null}</span>
             <span>{s.text}</span>
           </button>
         ))}

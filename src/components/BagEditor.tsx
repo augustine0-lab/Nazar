@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import { ActionForm } from "./ActionForm";
 import { deleteBagItemAction, saveBagItemAction } from "@/app/actions";
 import { BAG_ICONS, MAX_BAG_ITEMS, scanThingOf } from "@/lib/domain";
@@ -14,7 +15,7 @@ export async function BagEditor({ studentId, items }: { studentId: string; items
         <div className="list">
           {items.map((it) => (
             <div key={it.id} className="sched-edit bag-edit">
-              <span aria-hidden="true" style={{ fontSize: "1.6rem" }}>{it.icon}</span>
+              <span aria-hidden="true" style={{ fontSize: "1.6rem" }}><Emoji e={it.icon} /></span>
               <span>
                 {L(it.title)}
                 {scanThingOf([L(it.title), it.title], it.icon) && <> <span className="pill">{t("scan.camera")}</span></>}

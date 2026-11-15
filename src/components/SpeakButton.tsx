@@ -1,5 +1,6 @@
 "use client";
 
+import { I } from "@/components/ui/Icon";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import { speak, speechSupported, stopSpeaking } from "./speech";
@@ -31,7 +32,7 @@ export function SpeakButton({ text }: { text: string }) {
           setOn(res === "ok");
         }}
       >
-        🔊 {on ? t("speak.stop") : t("speak.read")}
+        <I name="speak" /> {on ? t("speak.stop") : t("speak.read")}
       </button>
       {note && <span className="muted small" role="status">{note}</span>}
     </>

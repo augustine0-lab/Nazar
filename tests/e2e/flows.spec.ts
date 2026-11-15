@@ -224,7 +224,7 @@ test("view settings change the page and are remembered", async ({ page }) => {
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "dark");
   await expect(html).toHaveAttribute("data-fs", "1");
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(18, 26, 25)");
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(18, 17, 32)");
 });
 
 test("a parent fills the observation scale and the psychologist sees it", async ({ browser }) => {

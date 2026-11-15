@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { StarRow } from "@/components/Stars";
@@ -50,7 +51,7 @@ export default async function StudentHome() {
   const evening = S.nowLocal().hour >= D.BAG_EVENING_HOUR;
   const bagCard = bag.items.length > 0 && (
     <section className="card">
-      <h2>🎒 {t("bag.title")}</h2>
+      <h2><I name="bag" /> {t("bag.title")}</h2>
       <BagList items={bag.items.map((i) => ({ id: i.id, title: i.title, icon: i.icon }))} doneIds={[...bag.doneIds]} interactive />
     </section>
   );
@@ -130,17 +131,17 @@ export default async function StudentHome() {
         {!evening && bagCard}
 
         <Link href="/room" className="card list-link">
-          <span><span aria-hidden="true">🤫</span> <b>{t("room.title")}</b></span>
+          <span><I name="room" /> <b>{t("room.title")}</b></span>
           <span className="muted small">{t("room.st.card")}</span>
         </Link>
 
         <Link href="/student/read" className="card list-link">
-          <span><span aria-hidden="true">🌅</span> <b>{t("read.title")}</b></span>
+          <span><I name="read" /> <b>{t("read.title")}</b></span>
           <span className="muted small">{t("read.studentLead")}</span>
         </Link>
 
         <Link href="/student/stories" className="card list-link">
-          <span><span aria-hidden="true">📖</span> <b>{t("story.title")}</b></span>
+          <span><I name="stories" /> <b>{t("story.title")}</b></span>
           <span className="muted small">{t("story.lead")}</span>
         </Link>
 

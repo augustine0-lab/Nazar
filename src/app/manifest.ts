@@ -20,8 +20,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],
     orientation: "any",
-    background_color: "#f3f6f5",
-    theme_color: "#2b7566",
+    background_color: "#f6f5fb",
+    theme_color: "#5a4fd8",
     categories: ["education", "kids", "productivity"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

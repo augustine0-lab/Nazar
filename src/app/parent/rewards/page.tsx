@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
 import { ChildSwitch } from "@/components/ChildSwitch";
@@ -28,7 +29,7 @@ export default async function ParentRewards({ searchParams }: { searchParams: Pr
       <p className="muted">{t("rewards.tip")}</p>
 
       <section className="card">
-        <h2>🐷 {t("goal.pinTitle")}</h2>
+        <h2><I name="piggy" /> {t("goal.pinTitle")}</h2>
         <p className="muted small">{t("goal.pinHint")}</p>
         {goal && <p>{t("goal.current", { title: L(goal.reward.title), pct: goal.pct })}</p>}
         <ActionForm action={pinGoalAction} className="row">

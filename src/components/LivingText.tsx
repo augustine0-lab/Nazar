@@ -1,5 +1,6 @@
 "use client";
 
+import { I } from "@/components/ui/Icon";
 import "@fontsource/pt-serif/400.css";
 import "@fontsource/pt-serif/700.css";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -200,7 +201,7 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
       <div className={`lt-text${held ? " held" : ""}${back ? " back" : ""}`} key={`t${i}`} ref={textRef}>
         {held && (
           <div className="lt-wait" role="status">
-            <span aria-hidden="true">👁</span> {t(back ? (projector ? "gz.backWide" : "gz.back") : projector ? "gz.heldWide" : "gz.held")}
+            <I name="eye" /> {t(back ? (projector ? "gz.backWide" : "gz.back") : projector ? "gz.heldWide" : "gz.held")}
           </div>
         )}
         {chapters[i].title && <h2 className="lt-ch">{chapters[i].title}</h2>}
@@ -215,7 +216,7 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
         <button type="button" className="btn" onClick={() => { go(i - 1); setStarted(true); }} disabled={i === 0}>← {t("read.prev")}</button>
         <SpeakButton key={i} text={`${ch.title}. ${ch.text}`} />
         <GazeControl gaze={gaze} wide={projector} />
-        {projector && <button type="button" className="btn quiet" onClick={fullscreen}>⛶ {t("board.fullscreen")}</button>}
+        {projector && <button type="button" className="btn quiet" onClick={fullscreen}><I name="fullscreen" /> {t("board.fullscreen")}</button>}
         {finished ? (
           <button type="button" className="btn primary" onClick={() => { go(0); setPlaying(false); setStarted(false); }}>{t("read.again")}</button>
         ) : (

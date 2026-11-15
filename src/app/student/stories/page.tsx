@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/Shell";
@@ -18,7 +19,7 @@ export default async function StudentStories() {
   const mine = await M.storiesOf(db, user, me.id);
   const card = (s: { id: string; title: string; icon: string; n: number }) => (
     <Link key={s.id} href={`/student/stories/${s.id}`} className="story-card">
-      <span className="story-pic" aria-hidden="true">{s.icon}</span>
+      <span className="story-pic" aria-hidden="true"><Emoji e={s.icon} /></span>
       <span>{L(s.title)}</span>
     </Link>
   );

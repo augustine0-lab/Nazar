@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/Shell";
@@ -30,7 +31,7 @@ export default async function SeatPage({ params }: { params: Promise<{ id: strin
     <Shell current="/teacher">
       <div className="stack" style={{ gap: 2 }}>
         <Link href={`/teacher/student/${id}`} className="small">← {student.displayName}</Link>
-        <h1><span aria-hidden="true">🪑</span> {t("seat.title")}</h1>
+        <h1><I name="seat" /> {t("seat.title")}</h1>
         <span className="muted">{cls.name}</span>
       </div>
 
@@ -64,8 +65,8 @@ export default async function SeatPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
             <div className="classroom-legend small muted">
-              <span>🪟 {layout.windowSide === "LEFT" ? t("seat.windowLeft") : t("seat.windowRight")}</span>
-              <span>🚪 {t("seat.door")}</span>
+              <span><I name="window" /> {layout.windowSide === "LEFT" ? t("seat.windowLeft") : t("seat.windowRight")}</span>
+              <span><I name="door" /> {t("seat.door")}</span>
             </div>
           </div>
           <p className="muted small">{t("seat.tapHint")}</p>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
+import { I } from "@/components/ui/Icon";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import type { MsgKey } from "@/lib/i18n";
@@ -515,17 +517,17 @@ export function QuietRoom({ classId, kind, video, iceServers, demo = false }: { 
                 </label>
               )}
               <button type="button" className={`btn ${cam ? "" : "primary"}`} onClick={() => void toggleCam()} disabled={!video} aria-pressed={cam}>
-                📷 {cam ? t("room.cam.off") : t("room.cam.on")}
+                <I name="camera" /> {cam ? t("room.cam.off") : t("room.cam.on")}
               </button>
               <label className="room-check">
                 <input type="checkbox" checked={blur} onChange={() => void toggleBlur()} disabled={!video} />
                 {t("room.blur")}
               </label>
               <button type="button" className="btn" onClick={() => void toggleMic()} disabled={!snap?.hosted && !mic} aria-pressed={mic}>
-                🎙️ {mic ? t("room.mic.off") : t("room.mic.on")}
+                <I name="mic" /> {mic ? t("room.mic.off") : t("room.mic.on")}
               </button>
               <button type="button" className="btn" onClick={() => setSound((s) => !s)} aria-pressed={sound}>
-                {sound ? "🔊" : "🔇"} {sound ? t("room.sound.off") : t("room.sound.on")}
+                <I name={sound ? "speak" : "mute"} /> {sound ? t("room.sound.off") : t("room.sound.on")}
               </button>
               <button type="button" className="btn quiet" onClick={() => void leave()}>{t("room.leave")}</button>
               {imHost && (
@@ -564,7 +566,7 @@ export function QuietRoom({ classId, kind, video, iceServers, demo = false }: { 
                     {!showVideo && (
                       <div className="room-avatar" aria-hidden="true">
                         <span className="room-initial">{m.name.slice(0, 1)}</span>
-                        <span className="room-icon">{m.kind === "HOST" ? "🧑‍🏫" : ROOM_ACTIVITY_ICON[m.activity]}</span>
+                        <span className="room-icon"><Emoji e={m.kind === "HOST" ? "🧑‍🏫" : ROOM_ACTIVITY_ICON[m.activity]} /></span>
                       </div>
                     )}
                     {!mine && m.cam && !showVideo && (

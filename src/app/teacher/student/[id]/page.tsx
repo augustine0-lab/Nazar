@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/Shell";
@@ -122,7 +123,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
           <LoadCard load={load} />
           {deals.length > 0 && (
             <div className="stack">
-              <h3>🤝 {t("deal.inbox", { n: deals.length })}</h3>
+              <h3><I name="deal" /> {t("deal.inbox", { n: deals.length })}</h3>
               <DealInbox items={deals} />
             </div>
           )}
@@ -136,7 +137,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
       {canMark && seat && (
         <Link href={`/teacher/seat/${id}`} className="card list-link">
           <span className="stack" style={{ gap: 2 }}>
-            <span><span aria-hidden="true">🪑</span> <b>{t("seat.title")}</b></span>
+            <span><I name="seat" /> <b>{t("seat.title")}</b></span>
             <span className="muted small">
               {seat.current
                 ? t("seat.cardNow", { traits: D.seatTraits(seat.current.row, seat.current.col, seat.layout).map((x) => t(`seat.trait.${x}`)).join(", ") || t("seat.trait.none"), date: D.formatDate(seat.current.from, lang) })

@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import { ActionForm } from "./ActionForm";
 import { choosePetAction } from "@/app/actions";
 import { PET_EMOJI, PET_ACCESSORY } from "@/lib/icons";
@@ -19,8 +20,8 @@ export async function PetCard({ studentId, info }: { studentId: string; info: Pe
         <>
           <div className="pet-box">
             <span className="pet" data-stage={stage} role="img" aria-label={`${L(pet.name)}: ${stageName}`}>
-              {PET_ACCESSORY[stage] && <span className="acc" aria-hidden="true">{PET_ACCESSORY[stage]}</span>}
-              {PET_EMOJI[pet.kind]}
+              {PET_ACCESSORY[stage] && <span className="acc" aria-hidden="true"><Emoji e={PET_ACCESSORY[stage]} /></span>}
+              <Emoji e={PET_EMOJI[pet.kind]} />
             </span>
             <div className="stack">
               <p>{t("pet.growth", { name: L(pet.name), stage: stageName })}</p>
@@ -53,7 +54,7 @@ async function PetForm({ studentId, kind, name }: { studentId: string; kind: str
         {PET_KINDS.map((k) => (
           <label key={k}>
             <input type="radio" name="kind" value={k} defaultChecked={k === kind} />
-            <span className="face" aria-hidden="true">{PET_EMOJI[k]}</span>
+            <span className="face" aria-hidden="true"><Emoji e={PET_EMOJI[k]} /></span>
             <span className="small">{t(`pet.kind.${k}` as MsgKey)}</span>
           </label>
         ))}

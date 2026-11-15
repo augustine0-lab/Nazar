@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
 import { useEffect, useRef, useState } from "react";
 import { selfCheckAction } from "@/app/actions";
 import { exerciseForCycle, selfCheckAt, timerState } from "@/lib/domain";
@@ -75,7 +76,7 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
         <p className="muted small">{t("tm.hint", { work: workMin, brk: breakMin })}</p>
         {running && st.phase === "BREAK" && (
           <div className="movebreak" role="status">
-            <b><span aria-hidden="true">{BREAK_EMOJI[exerciseForCycle(st.cycle)]}</span> {t("mv.title")}</b>
+            <b><span aria-hidden="true"><Emoji e={BREAK_EMOJI[exerciseForCycle(st.cycle)]} /></span> {t("mv.title")}</b>
             <span>{t(`mv.${exerciseForCycle(st.cycle)}`)}</span>
           </div>
         )}

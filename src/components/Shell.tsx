@@ -10,10 +10,18 @@ import { NavScroll } from "./NavScroll";
 import { InstallButton } from "./pwa/InstallApp";
 import { NotifyWatcher } from "./BrowserNotify";
 import { getDb } from "@/db";
+import { BrandMark, Icon, initials, type IconName } from "./ui/Icon";
 import { totalUnreadChat, unreadNotifications } from "@/lib/feature-services";
 import { getPrefs } from "@/lib/prefs-server";
 import { getT } from "@/lib/i18n/server";
 import type { MsgKey } from "@/lib/i18n";
+
+const NAV_ICON: Record<string, IconName> = {
+  "/teacher": "kids", "/teacher/week": "week", "/teacher/class": "classForAll", "/room": "room", "/chat": "chat",
+  "/techniques": "techniques", "/help": "help", "/parent": "today", "/parent/week": "week", "/parent/schedule": "schedule",
+  "/parent/rewards": "rewards", "/parent/homework": "homework", "/parent/plan": "plan", "/psych": "kids",
+  "/student": "today", "/student/read": "read", "/student/stories": "stories", "/student/rewards": "rewards", "/admin": "school",
+};
 
 const NAV: Record<Role, { href: string; label: MsgKey }[]> = {
   TEACHER: [
@@ -67,10 +75,11 @@ export async function Shell({ current, children }: { current: string; children: 
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <Link href="/" className="brand">Nazar</Link>
+          <Link href="/" className="brand"><BrandMark /><span>Nazar</span></Link>
           <nav className="topnav" aria-label={t("nav.sections")}>
             {NAV[user.role].map((n) => (
               <Link key={n.href} href={n.href} aria-current={current === n.href ? "page" : undefined}>
+                {NAV_ICON[n.href] && <Icon name={NAV_ICON[n.href]!} />}
                 {t(n.label)}
                 {n.href === "/chat" && unreadChat > 0 && <span className="badge" aria-label={t("chat.unread", { n: unreadChat })}>{unreadChat}</span>}
               </Link>
@@ -78,16 +87,19 @@ export async function Shell({ current, children }: { current: string; children: 
           </nav>
           <div className="who">
             {user.role === "STUDENT" ? (
-              <span className="who-name">{L(user.name)} · {t(`role.${user.role}`)}</span>
+              <span className="who-link who-static">
+                <span className="avatar" aria-hidden="true">{initials(L(user.name))}</span>
+                <span className="who-name">{L(user.name)}<small>{t(`role.${user.role}`)}</small></span>
+              </span>
             ) : (
               <Link href="/account" className="who-link" aria-label={`${t("nav.account")}: ${L(user.name)}`}>
-                <span className="who-icon" aria-hidden="true">👤</span>
-                <span className="who-name">{L(user.name)} · {t(`role.${user.role}`)}</span>
+                <span className="avatar" aria-hidden="true">{initials(L(user.name))}</span>
+                <span className="who-name">{L(user.name)}<small>{t(`role.${user.role}`)}</small></span>
               </Link>
             )}
             {adult && (
               <Link href="/notifications" className="bell" aria-label={unread.length ? t("ntf.bell", { n: unread.length }) : t("nav.notifications")}>
-                <span aria-hidden="true">🔔</span>
+                <Icon name="bell" />
                 {unread.length > 0 && <span className="badge">{unread.length}</span>}
               </Link>
             )}
@@ -96,7 +108,7 @@ export async function Shell({ current, children }: { current: string; children: 
             <LangSwitch />
             <form action={logoutAction}>
               <button className="btn quiet logout" type="submit" aria-label={t("nav.logout")} title={t("nav.logout")}>
-                <svg className="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16l-4-4 4-4" /><path d="M6 12h10" /></svg>
+                <Icon name="logout" />
                 <span className="lbl">{t("nav.logout")}</span>
               </button>
             </form>

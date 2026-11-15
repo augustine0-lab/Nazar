@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
 import { LOCALE, type MsgKey } from "@/lib/i18n";
@@ -42,7 +43,7 @@ export async function HealthView({ logs, analysis }: { logs: Log[]; analysis: An
               {logs.slice(0, 14).map((l) => (
                 <tr key={l.date}>
                   <td className="num">{D.shortWeekday(l.date, lang)}, {D.formatDate(l.date, lang)}</td>
-                  <td className="num">{l.sleepHours === null ? "—" : fmtH(l.sleepHours)}{l.sleepHours !== null && l.sleepHours < D.SHORT_SLEEP_HOURS ? " ⚠️" : ""}</td>
+                  <td className="num">{l.sleepHours === null ? "—" : fmtH(l.sleepHours)}{l.sleepHours !== null && l.sleepHours < D.SHORT_SLEEP_HOURS ? <> <I name="warn" /></> : null}</td>
                   <td>{l.medication ? t(`hl.med.${l.medication}` as MsgKey) : "—"}</td>
                 </tr>
               ))}

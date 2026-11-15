@@ -9,10 +9,11 @@ import { can } from "@/lib/access";
 import { HOME_BY_ROLE, requireUser } from "@/lib/session";
 import * as C from "@/lib/concept-services";
 import * as D from "@/lib/domain";
+import { I, type IconName } from "@/components/ui/Icon";
 import { getT } from "@/lib/i18n/server";
 import type { MsgKey } from "@/lib/i18n";
 
-const ICON: Record<D.PassportField, string> = { strengths: "💪", interests: "⭐", helps: "✅", hard: "⚠️", calming: "🌿", family: "📞" };
+const ICON: Record<D.PassportField, IconName> = { strengths: "strong", interests: "star", helps: "yes", hard: "warn", calming: "leaf", family: "call" };
 
 /**
  * A one-page passport for the next teacher: what the child is good at, what helps, what makes things hard,
@@ -55,7 +56,7 @@ export default async function Passport({ params }: { params: Promise<{ id: strin
         <div className="grid2">
           {D.PASSPORT_FIELDS.map((f) => (
             <section key={f} className="card">
-              <h2><span aria-hidden="true">{ICON[f]}</span> {t(`pp.f.${f}` as MsgKey)}</h2>
+              <h2><I name={ICON[f]} /> {t(`pp.f.${f}` as MsgKey)}</h2>
               {p.passport?.[f] ? <p style={{ whiteSpace: "pre-line" }}>{L(p.passport[f])}</p> : <p className="muted">{t("pp.empty")}</p>}
             </section>
           ))}
@@ -82,8 +83,8 @@ export default async function Passport({ params }: { params: Promise<{ id: strin
               <b>{t("pp.checked")}</b>
               {p.tried.length ? (
                 <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
-                  {keep.map((x) => <li key={x.trial.id}>✅ {L(x.technique.title)}{x.trial.conclusion ? `: ${L(x.trial.conclusion)}` : ""}</li>)}
-                  {drop.map((x) => <li key={x.trial.id}>✖️ {L(x.technique.title)}{x.trial.conclusion ? `: ${L(x.trial.conclusion)}` : ""}</li>)}
+                  {keep.map((x) => <li key={x.trial.id}><I name="yes" /> {L(x.technique.title)}{x.trial.conclusion ? `: ${L(x.trial.conclusion)}` : ""}</li>)}
+                  {drop.map((x) => <li key={x.trial.id}><I name="no" /> {L(x.technique.title)}{x.trial.conclusion ? `: ${L(x.trial.conclusion)}` : ""}</li>)}
                 </ul>
               ) : (
                 <p className="muted">{t("pp.noTrials")}</p>
@@ -114,7 +115,7 @@ export default async function Passport({ params }: { params: Promise<{ id: strin
               <p className="muted small">{t("pp.editHint")}</p>
               {D.PASSPORT_FIELDS.map((f) => (
                 <label key={f}>
-                  {ICON[f]} {t(`pp.f.${f}` as MsgKey)}
+                  <I name={ICON[f]} /> {t(`pp.f.${f}` as MsgKey)}
                   <span className="muted small">{t(`pp.q.${f}` as MsgKey)}</span>
                   <textarea name={f} rows={3} maxLength={D.PASSPORT_MAX} defaultValue={p.passport ? L(p.passport[f]) : ""} />
                 </label>
