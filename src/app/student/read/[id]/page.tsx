@@ -7,16 +7,17 @@ import { AccessDenied } from "@/lib/access";
 import { requireUser } from "@/lib/session";
 import * as R from "@/lib/reading-services";
 import { getT } from "@/lib/i18n/server";
+import { recordingFor } from "@/lib/voice";
 
 export default async function StudentReading({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("STUDENT");
-  const { t, L } = await getT();
+  const { t, L, lang } = await getT();
   const { id } = await params;
   const r = await R.readingFor(getDb(), user, id).catch((e) => {
     if (e instanceof AccessDenied) notFound();
     throw e;
   });
-  const chapters = r.chapters.map((c) => ({ ...c, title: L(c.title), text: L(c.text) }));
+  const chapters = r.chapters.map((c) => ({ ...c, title: L(c.title), text: L(c.text), voice: recordingFor(c.text, L(c.title), L(c.text), lang) }));
   return (
     <Shell current="/student/read">
       <Link href="/student/read" className="small">← {t("read.title")}</Link>
