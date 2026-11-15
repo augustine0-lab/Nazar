@@ -11,18 +11,19 @@ import { requireUser } from "@/lib/session";
 import * as R from "@/lib/reading-services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import { recordingFor } from "@/lib/voice";
 
 /** The teacher sees the living text as the pupils do (or on the projector), and edits it below. */
 export default async function TeacherReading({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("TEACHER");
-  const { t, L } = await getT();
+  const { t, L, lang } = await getT();
   const { id } = await params;
   const db = getDb();
   const r = await R.readingFor(db, user, id).catch((e) => {
     if (e instanceof AccessDenied) notFound();
     throw e;
   });
-  const chapters = r.chapters.map((c) => ({ ...c, title: L(c.title), text: L(c.text) }));
+  const chapters = r.chapters.map((c) => ({ ...c, title: L(c.title), text: L(c.text), voice: recordingFor(c.text, L(c.title), L(c.text), lang) }));
 
   return (
     <Shell current="/teacher/class">
