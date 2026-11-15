@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { getT } from "@/lib/i18n/server";
 import type { MsgKey } from "@/lib/i18n";
@@ -9,7 +10,7 @@ export async function SavingGoal({ goal }: { goal: { reward: { title: string; co
   return (
     <section className="card saving">
       <div className="row between">
-        <h2>🐷 {t("goal.title", { title: L(goal.reward.title) })}</h2>
+        <h2><I name="piggy" /> {t("goal.title", { title: L(goal.reward.title) })}</h2>
         <span className="pill star num">{goal.pct}%</span>
       </div>
       <div className="bar big-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={goal.pct} aria-label={L(goal.reward.title)}>

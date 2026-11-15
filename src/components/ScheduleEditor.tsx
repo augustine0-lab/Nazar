@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import { ActionForm } from "./ActionForm";
 import { deleteScheduleItemAction, saveScheduleItemAction } from "@/app/actions";
 import { SCHEDULE_EMOJI } from "@/lib/icons";
@@ -29,7 +30,7 @@ export async function ScheduleEditor({ studentId, items }: { studentId: string; 
             <div className="list">
               {day.map((it) => (
                 <div key={it.id} className="sched-edit">
-                  <span aria-hidden="true" style={{ fontSize: "1.6rem" }}>{SCHEDULE_EMOJI[it.icon]}</span>
+                  <span aria-hidden="true" style={{ fontSize: "1.6rem" }}><Emoji e={SCHEDULE_EMOJI[it.icon]} /></span>
                   <span className="num muted">{it.time}</span>
                   <span>{L(it.title)}</span>
                   <ActionForm action={deleteScheduleItemAction}>

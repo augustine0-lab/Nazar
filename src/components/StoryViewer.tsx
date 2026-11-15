@@ -1,5 +1,6 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
 import { useState } from "react";
 import { SpeakButton } from "./SpeakButton";
 import { useI18n } from "@/lib/i18n/client";
@@ -21,7 +22,7 @@ export function StoryViewer({ title, steps }: { title: string; steps: { icon: st
       ) : (
         <div className="story-step">
           <span className="eyebrow">{t("story.step", { n: i + 1, total: steps.length })}</span>
-          <span className="story-pic" aria-hidden="true">{step.icon}</span>
+          <span className="story-pic" aria-hidden="true"><Emoji e={step.icon} /></span>
           <p className="story-text">{L(step.text)}</p>
           <SpeakButton key={i} text={L(step.text)} />
         </div>

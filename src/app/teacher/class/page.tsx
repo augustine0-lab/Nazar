@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { UdlChecklist } from "@/components/UdlChecklist";
@@ -46,8 +47,8 @@ export default async function ClassForAll({ searchParams }: { searchParams: Prom
           <p>{t("udl.lead")}</p>
           <p className="muted small">{t("read.openHint")}</p>
           <div className="row">
-            <Link className="btn primary" href={`/teacher/board?class=${cls.id}`}>🗂️ {t("board.open")}</Link>
-            <Link className="btn" href={`/teacher/read?class=${cls.id}`}>📖 {t("read.open")}</Link>
+            <Link className="btn primary" href={`/teacher/board?class=${cls.id}`}><I name="classForAll" /> {t("board.open")}</Link>
+            <Link className="btn" href={`/teacher/read?class=${cls.id}`}><I name="read" /> {t("read.open")}</Link>
           </div>
         </section>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { I } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import { NOTE_TEMPLATES } from "@/lib/domain";
@@ -76,7 +77,7 @@ export function NoteField({ name, id, defaultValue, maxLength, placeholder, labe
           ))}
           {canDictate && (
             <button type="button" className="chip" aria-pressed={listening} onClick={dictate}>
-              🎤 {listening ? t("nt.voiceStop") : t("nt.voice")}
+              <I name="mic" /> {listening ? t("nt.voiceStop") : t("nt.voice")}
             </button>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import { Shell } from "@/components/Shell";
 import { ChildSwitch } from "@/components/ChildSwitch";
 import { HomeworkForm } from "@/components/HomeworkForm";
@@ -56,7 +57,7 @@ export default async function ParentHomework({ searchParams }: { searchParams: P
       </section>
       {inbox.length > 0 && (
         <section className="card" id="deals">
-          <h2>🤝 {t("deal.inbox", { n: inbox.length })}</h2>
+          <h2><I name="deal" /> {t("deal.inbox", { n: inbox.length })}</h2>
           <DealInbox items={inbox} />
         </section>
       )}
@@ -67,7 +68,7 @@ export default async function ParentHomework({ searchParams }: { searchParams: P
       </section>
       {sound && (
         <section className="card">
-          <h2>🎧 {t("snd.trialTitle")}</h2>
+          <h2><I name="sound" /> {t("snd.trialTitle")}</h2>
           <SoundCard studentId={child.id} report={sound} manage={false} />
         </section>
       )}

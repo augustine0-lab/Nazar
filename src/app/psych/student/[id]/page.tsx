@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/Shell";
@@ -174,7 +175,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
       {canEdit && (
         <section className="card">
           <details>
-            <summary><h2 style={{ display: "inline" }}>🎒 {t("bag.editor")}</h2></summary>
+            <summary><h2 style={{ display: "inline" }}><I name="bag" /> {t("bag.editor")}</h2></summary>
             <div style={{ marginTop: 12 }}><BagEditor studentId={id} items={bag?.items ?? []} /></div>
           </details>
         </section>
@@ -213,7 +214,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
       </section>
       {sound && (
         <section className="card">
-          <h2>🎧 {t("snd.trialTitle")}</h2>
+          <h2><I name="sound" /> {t("snd.trialTitle")}</h2>
           <SoundCard studentId={id} report={sound} manage={false} />
         </section>
       )}

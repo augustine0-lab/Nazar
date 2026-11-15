@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
@@ -129,7 +130,7 @@ export default async function ParentToday({ searchParams }: { searchParams: Prom
 
       <section className="card" id="room">
         <div className="row between">
-          <h2>🤫 {t("room.p.title")}</h2>
+          <h2><I name="room" /> {t("room.p.title")}</h2>
           <span className={`pill ${room.enabled ? "good" : ""}`}>{t(room.enabled ? (room.video ? "room.p.state.video" : "room.p.state.avatar") : "room.p.state.off")}</span>
         </div>
         <p className="muted small">{t("room.p.lead")}</p>

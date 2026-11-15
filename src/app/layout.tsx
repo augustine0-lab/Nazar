@@ -7,6 +7,7 @@ import "@fontsource/golos-text/700.css";
 import "@fontsource/unbounded/500.css";
 import "@fontsource/unbounded/700.css";
 import "./globals.css";
+import "./design.css";
 import { I18nProvider } from "@/lib/i18n/client";
 import { dictionary } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/i18n/server";
@@ -31,8 +32,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a2423" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f5fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#121120" },
   ],
 };
 

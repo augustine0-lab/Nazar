@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -50,7 +51,7 @@ export default async function HomeworkPage({ params, searchParams }: { params: P
           <FocusTimer studentId={me.id} homeworkId={hw.id} workMin={plan?.workMinutes ?? 10} breakMin={plan?.breakMinutes ?? 3} />
         </section>
         <section className="card">
-          <h2><span aria-hidden="true">🎧</span> {t("snd.title")}</h2>
+          <h2><I name="sound" /> {t("snd.title")}</h2>
           <SoundPlayer initial={sound?.trial.sound ?? "rain"} day={sound && sound.today !== "DONE" && sound.today !== "NOT_STARTED" ? sound.today : null} />
           <details open={Boolean(sound)}>
             <summary>{t("snd.trialTitle")}</summary>
@@ -58,7 +59,7 @@ export default async function HomeworkPage({ params, searchParams }: { params: P
           </details>
         </section>
         <section className="card" id="deals">
-          <h2><span aria-hidden="true">🤝</span> {t("deal.title")}</h2>
+          <h2><I name="deal" /> {t("deal.title")}</h2>
           <p className="muted small">{t("deal.lead")}</p>
           <DealBox homeworkId={hw.id} deals={deals} authorIsAdult={authorIsAdult} />
         </section>

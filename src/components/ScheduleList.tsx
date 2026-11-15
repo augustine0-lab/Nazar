@@ -1,5 +1,7 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
+import { Icon } from "@/components/ui/Icon";
 import { useState, useTransition } from "react";
 import { setScheduleDoneAction } from "@/app/actions";
 import { SCHEDULE_EMOJI } from "@/lib/icons";
@@ -60,12 +62,12 @@ export function ScheduleList({ items, doneIds, interactive }: { items: ScheduleE
                 disabled={!interactive}
                 onClick={() => toggle(it.id)}
               >
-                <span className="pic" aria-hidden="true">{SCHEDULE_EMOJI[it.icon]}</span>
+                <span className="pic" aria-hidden="true"><Emoji e={SCHEDULE_EMOJI[it.icon]} /></span>
                 <span>
                   <span className="time num">{it.time}{progress.currentId === it.id ? ` · ${t("sch.now")}` : ""}</span>
                   <span className="ttl">{title}</span>
                 </span>
-                <span className="tick" aria-hidden="true">{isDone ? "✓" : ""}</span>
+                <span className="tick" aria-hidden="true">{isDone ? <Icon name="check" className="ico tick-ico" /> : null}</span>
               </button>
             </li>
           );

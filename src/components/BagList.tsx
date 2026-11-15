@@ -1,5 +1,7 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
+import { Icon } from "@/components/ui/Icon";
 import { useState, useTransition } from "react";
 import { setBagDoneAction } from "@/app/actions";
 import { useI18n } from "@/lib/i18n/client";
@@ -78,9 +80,9 @@ export function BagList({ items, doneIds, interactive }: { items: BagEntry[]; do
                 disabled={!interactive}
                 onClick={() => toggle(it.id)}
               >
-                <span className="pic" aria-hidden="true">{it.icon}</span>
+                <span className="pic" aria-hidden="true"><Emoji e={it.icon} /></span>
                 <span><span className="ttl">{title}</span></span>
-                <span className="tick" aria-hidden="true">{isDone ? "✓" : ""}</span>
+                <span className="tick" aria-hidden="true">{isDone ? <Icon name="check" className="ico tick-ico" /> : null}</span>
               </button>
             </li>
           );

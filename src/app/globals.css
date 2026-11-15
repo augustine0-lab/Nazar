@@ -1,42 +1,58 @@
-/* Calm, low-stimulation palette: one accent, warm star colour, soft surfaces. */
+/* Soft gradient palette: pastel light, one indigo accent with a mint partner, a warm star colour. */
 :root {
-  --bg: #f3f6f5;
+  --bg: #f6f5fb;
   --surface: #ffffff;
-  --surface-2: #e8efed;
-  --fg: #1d2b2a;
-  --muted: #566866;
-  --line: #d3dedb;
-  --accent: #2b7566;
+  --surface-2: #f0eff8;
+  --fg: #1c1b33;
+  --muted: #5d5c78;
+  --line: #e3e1f0;
+  --accent: #5a4fd8;
   --accent-fg: #ffffff;
-  --accent-soft: #d6ece6;
-  --star: #a8730c;
-  --star-fill: #e3a72f;
-  --star-soft: #f7ead0;
-  --good: #2b7546;
-  --bad: #a8433a;
-  --bad-soft: #f5dfdb;
-  --c1: #2b7566;
-  --c2: #c98a12;
-  --c3: #6a6fb3;
-  --c4: #b45a8c;
-  --r: 14px;
+  --accent-soft: #ecebff;
+  --accent-2: #2f9e8f;
+  --star: #9a5d0a;
+  --star-fill: #f2a93b;
+  --star-soft: #fff1dc;
+  --good: #26745a;
+  --bad: #b23b3b;
+  --bad-soft: #fde4e4;
+  --c1: #5a4fd8;
+  --c2: #d48a12;
+  --c3: #2f9e8f;
+  --c4: #c0508e;
+  --r: 24px;
+  --r-sm: 14px;
+  --glass: rgb(255 255 255 / 0.74);
+  --glass-edge: rgb(255 255 255 / 0.9);
+  --glow-1: #dff3ec; --glow-2: #e6e2ff; --glow-3: #ffe9da;
+  --shadow: 0 1px 1px rgb(30 20 90 / 0.04), 0 12px 40px -16px rgb(60 40 160 / 0.22);
+  --shadow-lift: 0 2px 4px rgb(30 20 90 / 0.06), 0 20px 50px -18px rgb(60 40 160 / 0.34);
   --font-display: "Unbounded", "Golos Text", system-ui, sans-serif;
   --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-ui: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light;
 }
-/* Theme: follows the system unless the person picked light or dark in the view settings (data-theme on <html>). */
+/* Dark theme: deep indigo night with soft glows. Follows the system unless the person picked light or dark in the view settings (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121a19; --surface: #1a2423; --surface-2: #233130; --fg: #e4eeec; --muted: #9db0ad; --line: #2f3f3d;
-  --accent: #6cc3ae; --accent-fg: #0f1716; --accent-soft: #1f3a34; --star: #e8b54a; --star-fill: #e8b54a; --star-soft: #3a2f17;
-  --good: #72c48f; --bad: #e48b7c; --bad-soft: #3b2420; --c1: #6cc3ae; --c2: #e8b54a; --c3: #9ea3e6; --c4: #e08cbd;
-  color-scheme: dark;
+    --bg: #121120; --surface: #1b1a2d; --surface-2: #26243c; --fg: #eceaf8; --muted: #aaa7c6; --line: #33304d;
+    --accent: #a69dff; --accent-fg: #15132a; --accent-soft: #2a2752; --accent-2: #5fd0c0; --star: #f0bb5c; --star-fill: #f0bb5c; --star-soft: #3a2d1a;
+    --good: #7fd0a6; --bad: #f08f86; --bad-soft: #3f2226; --c1: #a69dff; --c2: #f0bb5c; --c3: #5fd0c0; --c4: #f08fc4;
+    --glass: rgb(30 28 50 / 0.72); --glass-edge: rgb(255 255 255 / 0.06);
+    --glow-1: rgb(63 182 168 / 0.10); --glow-2: rgb(123 108 246 / 0.16); --glow-3: rgb(240 140 120 / 0.06);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 40px -18px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 22px 50px -18px rgb(0 0 0 / 0.8);
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #121a19; --surface: #1a2423; --surface-2: #233130; --fg: #e4eeec; --muted: #9db0ad; --line: #2f3f3d;
-  --accent: #6cc3ae; --accent-fg: #0f1716; --accent-soft: #1f3a34; --star: #e8b54a; --star-fill: #e8b54a; --star-soft: #3a2f17;
-  --good: #72c48f; --bad: #e48b7c; --bad-soft: #3b2420; --c1: #6cc3ae; --c2: #e8b54a; --c3: #9ea3e6; --c4: #e08cbd;
+  --bg: #121120; --surface: #1b1a2d; --surface-2: #26243c; --fg: #eceaf8; --muted: #aaa7c6; --line: #33304d;
+  --accent: #a69dff; --accent-fg: #15132a; --accent-soft: #2a2752; --accent-2: #5fd0c0; --star: #f0bb5c; --star-fill: #f0bb5c; --star-soft: #3a2d1a;
+  --good: #7fd0a6; --bad: #f08f86; --bad-soft: #3f2226; --c1: #a69dff; --c2: #f0bb5c; --c3: #5fd0c0; --c4: #f08fc4;
+  --glass: rgb(30 28 50 / 0.72); --glass-edge: rgb(255 255 255 / 0.06);
+  --glow-1: rgb(63 182 168 / 0.10); --glow-2: rgb(123 108 246 / 0.16); --glow-3: rgb(240 140 120 / 0.06);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 40px -18px rgb(0 0 0 / 0.7);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 22px 50px -18px rgb(0 0 0 / 0.8);
   color-scheme: dark;
 }
 
@@ -187,8 +203,8 @@ html[data-read="1"] body { letter-spacing: 0.04em; word-spacing: 0.16em; line-he
 html[data-read="1"] p, html[data-read="1"] li { max-width: 70ch; }
 /* Calm mode: nothing moves, colours are quieter. */
 html[data-calm="1"] *, html[data-calm="1"] *::before, html[data-calm="1"] *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-html[data-calm="1"] { --star-fill: #c9a24d; --accent: #4b7f74; }
-html[data-calm="1"][data-theme="dark"] { --star-fill: #b8964a; --accent: #7fb3a6; }
+html[data-calm="1"] { --star-fill: #d9a54a; --accent: #5b55a8; --accent-2: var(--accent); --shadow: 0 1px 2px rgb(30 20 90 / 0.06); --shadow-lift: var(--shadow); }
+html[data-calm="1"][data-theme="dark"] { --star-fill: #c9a254; --accent: #9b96d6; --accent-2: var(--accent); --shadow: none; --shadow-lift: none; }
 html[data-calm="1"] .pet { filter: saturate(0.6); }
 
 .a11y { position: relative; }
@@ -587,7 +603,6 @@ html { -webkit-text-size-adjust: 100%; }
 .topbar { padding-top: env(safe-area-inset-top, 0px); }
 .page { padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); }
 .who-link { display: inline-flex; align-items: center; gap: 6px; }
-.who-icon { display: none; }
 .logout .ico { display: none; width: 20px; height: 20px; }
 .install-btn { white-space: nowrap; }
 .net-note { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; width: max-content; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; border: 1px solid var(--star); background: var(--star-soft); color: var(--fg); font-size: 0.95rem; font-weight: 600; text-align: center; box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.35); }
@@ -609,7 +624,6 @@ html { -webkit-text-size-adjust: 100%; }
   .topnav::-webkit-scrollbar { display: none; }
   .topnav a { flex: none; white-space: nowrap; min-height: 40px; display: inline-flex; align-items: center; }
   .who-name, .who .lbl { display: none; }
-  .who-icon { display: inline; font-size: 1.15rem; line-height: 1; }
   .who-link { min-width: 40px; min-height: 40px; justify-content: center; text-decoration: none; border-radius: 8px; }
   .who .btn { min-width: 40px; padding: 8px; }
   .bell { min-width: 40px; min-height: 40px; display: inline-grid; place-items: center; }

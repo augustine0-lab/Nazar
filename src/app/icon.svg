@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#2b7566"/>
-  <path d="M64 256 C 140 110, 372 110, 448 256 C 372 402, 140 402, 64 256 Z" fill="#f3f6f5"/>
-  <circle cx="256" cy="256" r="64" fill="#e3a72f"/>
-  <circle cx="256" cy="256" r="30" fill="#1d2b2a"/>
-  <circle cx="276" cy="236" r="11" fill="#ffffff"/>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b6cf6"/><stop offset="1" stop-color="#3fb6a8"/></linearGradient><radialGradient id="h" cx="0.25" cy="0.15" r="0.9"><stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/></radialGradient></defs>
+  <rect width="512" height="512" rx="120" fill="url(#g)"/>
+  <rect width="512" height="512" rx="120" fill="url(#h)"/>
+  <path d="M72 256 C 148 132, 364 132, 440 256 C 364 380, 148 380, 72 256 Z" fill="#ffffff"/><circle cx="256" cy="256" r="74" fill="url(#g)"/><circle cx="256" cy="256" r="40" fill="#1c1b33"/><circle cx="276" cy="236" r="13" fill="#ffffff"/>
 </svg>

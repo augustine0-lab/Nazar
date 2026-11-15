@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import { Shell } from "@/components/Shell";
 import { ChildSwitch } from "@/components/ChildSwitch";
 import { ScheduleEditor } from "@/components/ScheduleEditor";
@@ -39,7 +40,7 @@ export default async function ParentSchedule({ searchParams }: { searchParams: P
           </section>
           <section className="card">
             <div className="row between">
-              <h2>🎒 {t("bag.editor")}</h2>
+              <h2><I name="bag" /> {t("bag.editor")}</h2>
               {bag!.items.length > 0 && <span className="pill">{t("bag.today", { done: bag!.items.filter((i) => bag!.doneIds.has(i.id)).length, total: bag!.items.length })}</span>}
             </div>
             <BagEditor studentId={child.id} items={bag!.items} />

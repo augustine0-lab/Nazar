@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/ui/Emoji";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Flash } from "@/components/Flash";
@@ -35,7 +36,7 @@ export default async function DemoPage() {
     <form key={login} action={demoLoginAction}>
       <input type="hidden" name="login" value={login} />
       <button className="demo-role" type="submit">
-        <span aria-hidden="true">{icon}</span>
+        <span aria-hidden="true"><Emoji e={icon} /></span>
         <span><b>{login}</b><br /><span className="muted small">{t(label)}</span></span>
       </button>
     </form>

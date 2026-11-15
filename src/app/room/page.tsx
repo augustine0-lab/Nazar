@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { QuietRoom } from "@/components/QuietRoom";
@@ -37,7 +38,7 @@ export default async function RoomPage({ searchParams }: { searchParams: Promise
     <Shell current="/room">
       <div className={pupil ? "child stack" : "stack"} style={{ gap: 16 }}>
         <div className="row between">
-          <h1>🤫 {t("room.title")}</h1>
+          <h1><I name="room" /> {t("room.title")}</h1>
           {access && <span className="muted">{access.className}</span>}
         </div>
         {classes.length > 1 && (

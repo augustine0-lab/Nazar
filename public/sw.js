@@ -6,7 +6,7 @@
  * What it never keeps: pages and answers from the server. They hold children's data, and a phone or a school tablet
  * is often shared, so without internet the app shows the offline screen instead of an old copy of a page.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `nazar-shell-${VERSION}`;
 const STATIC = `nazar-static-${VERSION}`;
 const VISION = `nazar-vision-${VERSION}`;
@@ -86,7 +86,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(cacheFirst(request, VISION));
     return;
   }
-  if (url.pathname.startsWith("/icons/") || url.pathname === OFFLINE) {
+  // Icons and the emoji pictures are the same for everyone: no child's data in them.
+  if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/emoji/") || url.pathname === OFFLINE) {
     event.respondWith(staleWhileRevalidate(request));
   }
   // Everything else (/api, page data, images from the server) goes to the network as usual.

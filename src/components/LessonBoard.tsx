@@ -1,5 +1,7 @@
 "use client";
 
+import { Emoji } from "@/components/ui/Emoji";
+import { I } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import type { BoardStep } from "@/lib/domain/concepts";
 import { useI18n } from "@/lib/i18n/client";
@@ -37,15 +39,15 @@ export function LessonBoard({ steps }: { steps: BoardStep[] }) {
   return (
     <div className="stack">
       <div className="row no-print">
-        <button className="btn primary" type="button" onClick={() => setRunning((x) => !x)}>{running ? `⏸ ${t("board.pause")}` : `▶ ${t("board.start")}`}</button>
+        <button className="btn primary" type="button" onClick={() => setRunning((x) => !x)}><I name={running ? "pause" : "play"} /> {running ? t("board.pause") : t("board.start")}</button>
         <button className="btn" type="button" onClick={() => go(i - 1)} disabled={i === 0}>← {t("board.back")}</button>
         <button className="btn" type="button" onClick={() => go(i + 1)} disabled={i === steps.length - 1}>{t("board.next")} →</button>
-        <button className="btn" type="button" onClick={fullscreen}>⛶ {t("board.fullscreen")}</button>
+        <button className="btn" type="button" onClick={fullscreen}><I name="fullscreen" /> {t("board.fullscreen")}</button>
       </div>
       <div className="board" ref={ref}>
         <div className="board-now" aria-live="polite">
           <span className="eyebrow">{t("board.now", { n: i + 1, total: steps.length })}</span>
-          <span className="pic" aria-hidden="true">{step.icon}</span>
+          <span className="pic" aria-hidden="true"><Emoji e={step.icon} /></span>
           <span className="ttl">{step.text}</span>
           {left === 0 ? (
             <span className="board-timeup">{t("board.timeUp")}</span>
@@ -64,7 +66,7 @@ export function LessonBoard({ steps }: { steps: BoardStep[] }) {
         <ol className="board-steps">
           {steps.map((s, k) => (
             <li key={k} className={k === i ? "now" : k < i ? "past" : ""}>
-              <span aria-hidden="true">{s.icon}</span>
+              <span aria-hidden="true"><Emoji e={s.icon} /></span>
               <span>{s.text}</span>
               <span className="min">{t("board.min", { n: s.minutes })}</span>
             </li>

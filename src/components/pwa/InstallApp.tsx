@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useI18n } from "@/lib/i18n/client";
+import { Icon, I } from "../ui/Icon";
 import { installState, promptInstall, subscribe, type InstallState } from "./install-store";
 
 function useInstallState(): InstallState | null {
@@ -19,7 +20,7 @@ export function InstallButton() {
   if (state !== "prompt") return null;
   return (
     <button type="button" className="btn quiet install-btn" onClick={() => void promptInstall()} title={t("pwa.installTitle")} aria-label={t("pwa.installTitle")}>
-      <span aria-hidden="true">📲</span> <span className="lbl">{t("pwa.install")}</span>
+      <Icon name="install" /> <span className="lbl">{t("pwa.install")}</span>
     </button>
   );
 }
@@ -32,7 +33,7 @@ export function InstallCard({ compact = false }: { compact?: boolean }) {
   if (!state || (compact && (state === "installed" || state === "manual"))) return null;
   return (
     <section className={compact ? "install-card stack" : "card install-card"} aria-labelledby="install-title">
-      <h2 id="install-title"><span aria-hidden="true">📲</span> {t("pwa.title")}</h2>
+      <h2 id="install-title"><I name="phone" /> {t("pwa.title")}</h2>
       {state === "installed" ? (
         <p>{t("pwa.installed")}</p>
       ) : (

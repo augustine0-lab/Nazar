@@ -1,5 +1,6 @@
 "use client";
 
+import { I } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import { PREFS_COOKIE, prefsAttributes, serializePrefs, type Prefs } from "@/lib/prefs";
 import { useI18n } from "@/lib/i18n/client";
@@ -78,7 +79,7 @@ export function A11yPanel({ initial }: { initial: Prefs }) {
           <input type="checkbox" checked={prefs.cm} onChange={(e) => update({ cm: e.target.checked })} />
           <span><b>{t("a11y.calm")}</b><br /><span className="muted small">{t("a11y.calmHint")}</span></span>
         </label>
-        <button type="button" className="btn" onClick={toggleSpeech}>{speaking ? t("a11y.stop") : `🔊 ${t("a11y.speakPage")}`}</button>
+        <button type="button" className="btn" onClick={toggleSpeech}><I name={speaking ? "mute" : "speak"} /> {speaking ? t("a11y.stop") : t("a11y.speakPage")}</button>
         {note && <p className="msg err" role="status">{note}</p>}
       </div>
     </details>
