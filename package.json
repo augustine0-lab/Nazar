@@ -4,9 +4,9 @@
   "private": true,
   "description": "Nazar, команда вокруг ребёнка: платформа поддержки школьников с СДВГ",
   "scripts": {
-    "predev": "node scripts/gaze-assets.mjs",
+    "predev": "node scripts/vision-assets.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/gaze-assets.mjs",
+    "prebuild": "node scripts/vision-assets.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

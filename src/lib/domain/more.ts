@@ -54,7 +54,7 @@ export function parseStorySteps(text: string): StoryStep[] {
 
 /* ---------- evening bag checklist ---------- */
 
-export const BAG_ICONS = ["📚", "📓", "✏️", "📏", "🎨", "👟", "🍎", "💧", "📝", "🎒"] as const;
+export const BAG_ICONS = ["📚", "📓", "✏️", "📏", "✂️", "🎨", "👟", "🍎", "💧", "📝", "🎒"] as const;
 export const MAX_BAG_ITEMS = 15;
 /** From this hour the checklist is shown first on the child's screen. */
 export const BAG_EVENING_HOUR = 15;
