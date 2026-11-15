@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/session";
 import type { Role } from "@/db/schema";
 import { LangSwitch } from "./LangSwitch";
 import { A11yPanel } from "./A11yPanel";
+import { NavScroll } from "./NavScroll";
+import { InstallButton } from "./pwa/InstallApp";
 import { NotifyWatcher } from "./BrowserNotify";
 import { getDb } from "@/db";
 import { totalUnreadChat, unreadNotifications } from "@/lib/feature-services";
@@ -76,9 +78,12 @@ export async function Shell({ current, children }: { current: string; children: 
           </nav>
           <div className="who">
             {user.role === "STUDENT" ? (
-              <span>{L(user.name)} · {t(`role.${user.role}`)}</span>
+              <span className="who-name">{L(user.name)} · {t(`role.${user.role}`)}</span>
             ) : (
-              <Link href="/account" aria-label={t("nav.account")}>{L(user.name)} · {t(`role.${user.role}`)}</Link>
+              <Link href="/account" className="who-link" aria-label={`${t("nav.account")}: ${L(user.name)}`}>
+                <span className="who-icon" aria-hidden="true">👤</span>
+                <span className="who-name">{L(user.name)} · {t(`role.${user.role}`)}</span>
+              </Link>
             )}
             {adult && (
               <Link href="/notifications" className="bell" aria-label={unread.length ? t("ntf.bell", { n: unread.length }) : t("nav.notifications")}>
@@ -86,12 +91,19 @@ export async function Shell({ current, children }: { current: string; children: 
                 {unread.length > 0 && <span className="badge">{unread.length}</span>}
               </Link>
             )}
+            <InstallButton />
             <A11yPanel initial={prefs} />
             <LangSwitch />
-            <form action={logoutAction}><button className="btn quiet" type="submit">{t("nav.logout")}</button></form>
+            <form action={logoutAction}>
+              <button className="btn quiet logout" type="submit" aria-label={t("nav.logout")} title={t("nav.logout")}>
+                <svg className="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16l-4-4 4-4" /><path d="M6 12h10" /></svg>
+                <span className="lbl">{t("nav.logout")}</span>
+              </button>
+            </form>
           </div>
         </div>
       </header>
+      <NavScroll />
       <main className="page">{children}</main>
       {adult && <NotifyWatcher />}
       <Flash value={flash ? decodeURIComponent(flash) : null} />

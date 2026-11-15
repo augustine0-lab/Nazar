@@ -97,7 +97,8 @@ textarea { resize: vertical; }
 .list > *:first-child { border-top: 0; padding-top: 0; }
 .list-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; color: var(--fg); }
 
-.pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; flex: none; }
+/* A long pill wraps instead of pushing the page wider than a phone screen. */
+.pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); flex: none; max-width: 100%; overflow-wrap: anywhere; }
 .pill.good { background: var(--accent-soft); color: var(--good); }
 .pill.star { background: var(--star-soft); color: var(--star); }
 .pill.bad { background: var(--bad-soft); color: var(--bad); }
@@ -223,7 +224,7 @@ label.check { flex-direction: row; gap: 10px; align-items: flex-start; cursor: p
 .pet .acc { position: absolute; top: -0.5em; left: 50%; transform: translateX(-50%); font-size: 0.45em; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; border: 0; padding: 0; margin: 0; }
-.kinds label { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; background: var(--surface); }
+.kinds label { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; background: var(--surface); }
 .kinds label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .kinds input { position: absolute; opacity: 0; pointer-events: none; }
 .kinds .face { font-size: 2.2rem; line-height: 1; }
@@ -579,3 +580,56 @@ legend { padding: 0; margin-bottom: 6px; }
 @keyframes scan-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
 @keyframes scan-sweep { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { .sched-item.scanned .tick, .sched-item.scanned .ttl, .scan-note.good { animation: none; } }
+
+/* ---------- phone and installed app (PWA) ---------- */
+html { -webkit-text-size-adjust: 100%; }
+/* Installed on a phone, the app draws under the status bar and the home indicator: keep the content clear of them. */
+.topbar { padding-top: env(safe-area-inset-top, 0px); }
+.page { padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); }
+.who-link { display: inline-flex; align-items: center; gap: 6px; }
+.who-icon { display: none; }
+.logout .ico { display: none; width: 20px; height: 20px; }
+.install-btn { white-space: nowrap; }
+.net-note { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; width: max-content; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; border: 1px solid var(--star); background: var(--star-soft); color: var(--fg); font-size: 0.95rem; font-weight: 600; text-align: center; box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.35); }
+.net-note.back { border-color: var(--accent); background: var(--accent-soft); }
+.net-note[data-shown="false"] { display: none; }
+.install-card h2 { display: flex; align-items: center; gap: 8px; }
+.login .install-card { border-top: 1px solid var(--line); padding-top: 14px; gap: 8px; }
+@media (display-mode: standalone) {
+  /* No browser chrome around the app: no rubber-band pull that reloads a child's half-filled form by accident. */
+  body { overscroll-behavior-y: none; }
+}
+
+@media (max-width: 640px) {
+  /* Top bar on a phone: the logo and the small buttons on one line, the sections on a row that scrolls sideways. */
+  .topbar-inner { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 8px; padding-block: 6px 0; }
+  .brand { grid-row: 1; grid-column: 1; }
+  .who { grid-row: 1; grid-column: 2; gap: 2px; margin-left: 0; }
+  .topnav { grid-row: 2; grid-column: 1 / -1; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; gap: 2px; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left))) calc(-1 * max(16px, env(safe-area-inset-right))); padding: 2px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left)); -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 22px), transparent); }
+  .topnav::-webkit-scrollbar { display: none; }
+  .topnav a { flex: none; white-space: nowrap; min-height: 40px; display: inline-flex; align-items: center; }
+  .who-name, .who .lbl { display: none; }
+  .who-icon { display: inline; font-size: 1.15rem; line-height: 1; }
+  .who-link { min-width: 40px; min-height: 40px; justify-content: center; text-decoration: none; border-radius: 8px; }
+  .who .btn { min-width: 40px; padding: 8px; }
+  .bell { min-width: 40px; min-height: 40px; display: inline-grid; place-items: center; }
+  .logout .ico { display: block; }
+  .seg.lang button { min-width: 40px; padding: 6px 8px; }
+  .page { padding-top: 16px; }
+  .lt-list button { min-height: 40px; }
+  .a11y-body { position: fixed; top: calc(56px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); width: auto; max-height: calc(100dvh - 80px); overflow-y: auto; }
+}
+@media (max-width: 640px) {
+  .a11y-body .seg button { padding: 8px 4px; font-size: 0.8rem; overflow-wrap: normal; hyphens: auto; }
+}
+@media (max-width: 400px) {
+  /* Very narrow: the install button lives on the login screen and in «Справка» instead. */
+  .install-btn { display: none; }
+}
+@media (max-width: 359px) {
+  /* Small old phones (320 px): the top bar buttons squeeze a little so they stay on one line. */
+  .topbar-inner { column-gap: 4px; }
+  .who { gap: 0; }
+  .who .btn, .who-link, .bell { min-width: 36px; padding: 6px; }
+  .seg.lang button { min-width: 36px; padding: 6px 5px; }
+}

@@ -4,6 +4,7 @@ import { A11yPanel } from "@/components/A11yPanel";
 import { getPrefs } from "@/lib/prefs-server";
 import { loginAction } from "@/app/actions";
 import Link from "next/link";
+import { InstallCard } from "@/components/pwa/InstallApp";
 import { demoEnabled } from "@/lib/demo-mode";
 import { getT } from "@/lib/i18n/server";
 import type { MsgKey } from "@/lib/i18n";
@@ -43,6 +44,7 @@ export default async function LoginPage() {
           </label>
           <button className="btn primary" type="submit">{t("login.submit")}</button>
         </ActionForm>
+        <InstallCard compact />
         {process.env.NEXT_PUBLIC_DEMO !== "off" && (
           <div className="demo-logins stack muted">
             <span className="eyebrow">{t("login.demoTitle")}</span>
