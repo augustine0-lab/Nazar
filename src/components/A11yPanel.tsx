@@ -49,7 +49,7 @@ export function A11yPanel({ initial }: { initial: Prefs }) {
   return (
     <details className="a11y" ref={ref}>
       <summary className="btn quiet" aria-label={t("a11y.title")}>
-        <span aria-hidden="true">Aa</span> {t("a11y.open")}
+        <span aria-hidden="true">Aa</span> <span className="lbl">{t("a11y.open")}</span>
       </summary>
       <div className="a11y-body" role="group" aria-label={t("a11y.title")}>
         <div className="stack">

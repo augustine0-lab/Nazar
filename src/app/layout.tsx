@@ -12,13 +12,29 @@ import { dictionary } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/i18n/server";
 import { getPrefs } from "@/lib/prefs-server";
 import { prefsAttributes } from "@/lib/prefs";
+import { Pwa } from "@/components/pwa/Pwa";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t("app.name"), description: t("app.description") };
+  return {
+    title: t("app.name"),
+    description: t("app.description"),
+    applicationName: "Nazar",
+    // Installed on an iPhone, Nazar opens full screen with its own name and icon under it.
+    appleWebApp: { capable: true, title: "Nazar", statusBarStyle: "default" },
+    formatDetection: { telephone: false },
+  };
 }
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a2423" },
+  ],
+};
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLang();
@@ -26,7 +42,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang} {...prefsAttributes(prefs)}>
       <body>
-        <I18nProvider lang={lang} messages={dictionary(lang)}>{children}</I18nProvider>
+        <I18nProvider lang={lang} messages={dictionary(lang)}>
+          {children}
+          <Pwa />
+        </I18nProvider>
       </body>
     </html>
   );

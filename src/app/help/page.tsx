@@ -2,6 +2,7 @@ import { Shell } from "@/components/Shell";
 import { requireUser } from "@/lib/session";
 import { getT } from "@/lib/i18n/server";
 import type { MsgKey } from "@/lib/i18n";
+import { InstallCard } from "@/components/pwa/InstallApp";
 
 // Section id, how many points it has, and which reader it is for first.
 const SECTIONS: { id: string; n: number }[] = [
@@ -33,6 +34,7 @@ export default async function HelpPage() {
       <p className="muted">{t("help.lead")}</p>
       <nav className="chips no-print" aria-label={t("nav.sections")}>
         {order.map((s) => <a key={s.id} className="chip" href={`#${s.id}`}>{t(`help.${s.id}.title` as MsgKey)}</a>)}
+        <a className="chip" href="#app">{t("pwa.title")}</a>
         <a className="chip" href="#sources">{t("help.sources")}</a>
       </nav>
       {order.map((s) => (
@@ -47,6 +49,7 @@ export default async function HelpPage() {
           )}
         </section>
       ))}
+      <div id="app"><InstallCard /></div>
       <section id="sources" className="card">
         <h2>{t("help.sources")}</h2>
         <ol className="stack small" style={{ margin: 0, paddingLeft: 20 }}>
