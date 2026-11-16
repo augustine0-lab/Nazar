@@ -152,7 +152,11 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
   ], 70, [0, 2, 5, 6]);
 
   // History: chances of a YES grow week by week, so the charts show progress.
-  const fill = (studentId: string, goalIds: string[], base: number[], step: number, homeGoal?: string, homeAuthor?: string) => {
+  // Miras moves from the back desk to the front one 9 school days before the demo day (see the seats below).
+  const moved = D.schoolDaysBefore(demoDay, 9)[0];
+  // At the back desk his lessons went a little worse, so the seat comparison shows a clear change on any demo day,
+  // whatever the random draws and the day of the week.
+  const fill = (studentId: string, goalIds: string[], base: number[], step: number, homeGoal?: string, homeAuthor?: string, worseBefore?: string) => {
     let d = fourWeeksAgo;
     let week = 0;
     while (d <= demoDay) {
@@ -162,7 +166,8 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
         for (let lesson = 1; lesson <= lessons; lesson++) {
           goalIds.forEach((goalId, gi) => {
             // Homework is only written down in the last two lessons of the day.
-            const value: s.MarkValue = gi === 2 && lesson < 4 ? "NA" : rand() < Math.min(0.95, base[gi] + step * week) ? "YES" : "NO";
+            const penalty = worseBefore && d < worseBefore ? 0.15 : 0;
+            const value: s.MarkValue = gi === 2 && lesson < 4 ? "NA" : rand() < Math.min(0.95, base[gi] + step * week - penalty) ? "YES" : "NO";
             db.insert(s.marks).values({ studentId, goalId, date: d, lessonNo: lesson, value, authorId: aigul }).run();
           });
         }
@@ -174,7 +179,7 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
       d = D.addDays(d, 1);
     }
   };
-  fill(miras, mishaPlan.goalIds.slice(0, 3), [0.45, 0.25, 0.6], 0.1, mishaPlan.goalIds[3], gulnar);
+  fill(miras, mishaPlan.goalIds.slice(0, 3), [0.45, 0.25, 0.6], 0.1, mishaPlan.goalIds[3], gulnar, moved);
   fill(aliya, anyaV1.goalIds, [0.35, 0.5], 0.06);
 
   db.insert(s.dayNotes).values({
