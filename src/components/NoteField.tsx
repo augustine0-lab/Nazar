@@ -4,6 +4,8 @@ import { I } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import { NOTE_TEMPLATES } from "@/lib/domain";
+import { SoftenButton } from "@/components/ai/SoftenButton";
+import { NOTE_APPEND_EVENT } from "@/components/ai/shared";
 
 // The browser's own speech recognition; not in the TypeScript DOM types.
 type Recognition = {
@@ -23,7 +25,7 @@ const ctor = (): RecognitionCtor | null => {
 };
 
 /** Note field with ready phrases and dictation, so a teacher can finish a note in a few seconds. */
-export function NoteField({ name, id, defaultValue, maxLength, placeholder, label }: { name: string; id: string; defaultValue: string; maxLength: number; placeholder: string; label: string }) {
+export function NoteField({ name, id, defaultValue, maxLength, placeholder, label, aiStudentId }: { name: string; id: string; defaultValue: string; maxLength: number; placeholder: string; label: string; aiStudentId?: string }) {
   const { t, lang } = useI18n();
   const [text, setText] = useState(defaultValue);
   const [listening, setListening] = useState(false);
@@ -37,6 +39,14 @@ export function NoteField({ name, id, defaultValue, maxLength, placeholder, labe
   }, []);
 
   const add = (phrase: string) => setText((cur) => (cur.trim() ? `${cur.trimEnd()} ${phrase}` : phrase).slice(0, maxLength));
+
+  // The note the AI wrote from the teacher's voice comes in as an event from the mark grid.
+  useEffect(() => {
+    const onAppend = (e: Event) => add(String((e as CustomEvent).detail ?? ""));
+    window.addEventListener(NOTE_APPEND_EVENT, onAppend);
+    return () => window.removeEventListener(NOTE_APPEND_EVENT, onAppend);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function dictate() {
     if (listening) {
@@ -82,6 +92,7 @@ export function NoteField({ name, id, defaultValue, maxLength, placeholder, labe
           )}
         </div>
         {listening && <span className="muted small" role="status">{t("nt.voiceListening")}</span>}
+        {aiStudentId && <SoftenButton studentId={aiStudentId} targetId={id} />}
         {info && <span className="msg err" role="status">{info}</span>}
       </div>
     </div>

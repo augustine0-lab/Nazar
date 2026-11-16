@@ -1,6 +1,8 @@
 import { Shell } from "@/components/Shell";
 import { ActionForm } from "@/components/ActionForm";
-import { createClassAction, createStudentAction, createUserAction, linkAction, moveStudentAction, resetPasswordAction } from "@/app/actions";
+import { createClassAction, createStudentAction, createUserAction, linkAction, moveStudentAction, resetPasswordAction, schoolAiAction } from "@/app/actions";
+import * as AI from "@/lib/ai-services";
+import * as D from "@/lib/domain";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/session";
 import * as S from "@/lib/services";
@@ -8,8 +10,9 @@ import { getT } from "@/lib/i18n/server";
 
 export default async function AdminPage() {
   const user = await requireUser("ADMIN");
-  const { t, L } = await getT();
-  const { people, classes, kids, links, assigns } = await S.schoolOverview(getDb(), user);
+  const { lang, t, L } = await getT();
+  const db = getDb();
+  const [{ people, classes, kids, links, assigns }, ai] = await Promise.all([S.schoolOverview(db, user), AI.aiJournal(db, user)]);
   const byId = new Map(people.map((p) => [p.id, p]));
   const teachers = people.filter((p) => p.role === "TEACHER");
   const parents = people.filter((p) => p.role === "PARENT");
@@ -19,6 +22,47 @@ export default async function AdminPage() {
     <Shell current="/admin">
       <h1>{t("nav.school")}</h1>
       <p className="muted">{t("ad.intro")}</p>
+
+      <section className="card ai-box" id="ai">
+        <div className="row between">
+          <h2>{t("ai.admin.title")}</h2>
+          <span className={`pill ${ai.enabled ? "good" : ""}`}>{ai.enabled ? t("ai.admin.on") : t("ai.admin.off")}</span>
+        </div>
+        <p className="small">{t("ai.admin.lead")}</p>
+        <p className="muted small">{ai.keySet ? t("ai.admin.keyYes", { model: ai.model }) : t("ai.admin.keyNo")}</p>
+        <ActionForm action={schoolAiAction} className="row">
+          {ai.enabled ? (
+            <button className="btn" name="intent" value="off" type="submit">{t("ai.admin.turnOff")}</button>
+          ) : (
+            <button className="btn ai" name="intent" value="on" type="submit">{t("ai.admin.turnOn")}</button>
+          )}
+        </ActionForm>
+        <p className="small">{t("ai.admin.month", { calls: ai.totals.calls, gemini: ai.totals.gemini, offline: ai.totals.offline, tin: ai.totals.inputTokens, tout: ai.totals.outputTokens })}</p>
+        <details>
+          <summary>{t("ai.admin.journal")}</summary>
+          {ai.rows.length ? (
+            <div className="table-wrap" style={{ marginTop: 8 }}>
+              <table className="data">
+                <thead><tr><th>{t("ai.admin.col.when")}</th><th>{t("ai.admin.col.who")}</th><th>{t("ai.admin.col.feature")}</th><th>{t("ai.admin.col.source")}</th><th>{t("ai.admin.col.child")}</th><th>{t("ai.admin.col.tokens")}</th></tr></thead>
+                <tbody>
+                  {ai.rows.map(({ call, name, role }) => (
+                    <tr key={call.id}>
+                      <td className="num">{D.formatStamp(call.at, lang)}, {call.at.toLocaleTimeString(lang === "kk" ? "kk-KZ" : "ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: D.APP_TZ })}</td>
+                      <td>{L(name)} · {t(`role.${role}`)}</td>
+                      <td>{t(`ai.feature.${call.feature}`)}</td>
+                      <td>{t(`ai.source.${call.source}`)}</td>
+                      <td>{call.studentId ? t("common.yes") : t("common.no")}</td>
+                      <td className="num">{call.inputTokens + call.outputTokens || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="muted small">{t("ai.admin.empty")}</p>
+          )}
+        </details>
+      </section>
 
       <section className="card">
         <h2>{t("ad.students")}</h2>

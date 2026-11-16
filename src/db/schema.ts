@@ -616,3 +616,47 @@ export const seatings = sqliteTable(
   },
   (t) => [uniqueIndex("seatings_student_date_idx").on(t.studentId, t.fromDate)],
 );
+
+/* ---------- AI help through Gemini: only adults call it, only for children whose parent allowed it ---------- */
+
+// The school decides whether its adults may use the AI buttons at all. Without a row the AI is off.
+export const aiSettings = sqliteTable("ai_settings", {
+  schoolId: text("school_id").primaryKey().references(() => schools.id, { onDelete: "cascade" }),
+  enabled: integer("enabled", { mode: "boolean" }).notNull(),
+  changedById: text("changed_by_id").notNull().references(() => users.id),
+  changedAt: integer("changed_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+// A parent's separate permission to send records about the child, without the name, to the AI service.
+export const aiConsents = sqliteTable("ai_consents", {
+  studentId: text("student_id").primaryKey().references(() => students.id, { onDelete: "cascade" }),
+  allowed: integer("allowed", { mode: "boolean" }).notNull(),
+  changedById: text("changed_by_id").notNull().references(() => users.id),
+  changedAt: integer("changed_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const AI_FEATURES = ["PHOTO_STEPS", "VOICE_MARKS", "SOFTEN", "STORY"] as const;
+export type AiFeature = (typeof AI_FEATURES)[number];
+// GEMINI: the answer came from the model. OFFLINE: Nazar's own simple rules answered (no key, quota used up, error).
+export const AI_SOURCES = ["GEMINI", "OFFLINE"] as const;
+export type AiSource = (typeof AI_SOURCES)[number];
+
+// One row per AI request, for the school's journal. What was sent and answered is never stored.
+export const aiCalls = sqliteTable(
+  "ai_calls",
+  {
+    id: id(),
+    schoolId: text("school_id").notNull().references(() => schools.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").notNull().references(() => users.id),
+    studentId: text("student_id").references(() => students.id, { onDelete: "set null" }),
+    feature: text("feature", { enum: AI_FEATURES }).notNull(),
+    source: text("source", { enum: AI_SOURCES }).notNull(),
+    model: text("model"),
+    // Why Nazar answered by itself: NO_KEY, QUOTA, FAILED; null when Gemini answered.
+    fallback: text("fallback"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    at: createdAt(),
+  },
+  (t) => [index("ai_calls_school_idx").on(t.schoolId, t.at)],
+);

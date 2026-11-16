@@ -11,6 +11,8 @@ import * as M from "@/lib/more-services";
 import * as S from "@/lib/services";
 import { libraryStories, MAX_STORY_STEPS } from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import * as AI from "@/lib/ai-services";
+import { StoryDraft } from "@/components/ai/StoryDraft";
 
 /** Parents and the psychologist write the child's own social stories here. */
 export default async function StoriesEditor({ params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +21,7 @@ export default async function StoriesEditor({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const db = getDb();
   if (!(await can(db, user, "MANAGE_STORIES", id))) notFound();
-  const [{ student }, mine] = await Promise.all([S.getStudent(db, id), M.storiesOf(db, user, id)]);
+  const [{ student }, mine, ai] = await Promise.all([S.getStudent(db, id), M.storiesOf(db, user, id), AI.aiGate(db, user, id, "MANAGE_STORIES")]);
   const back = user.role === "PARENT" ? `/parent?child=${id}` : `/psych/student/${id}`;
   return (
     <Shell current={user.role === "PARENT" ? "/parent" : "/psych"}>
@@ -52,14 +54,16 @@ export default async function StoriesEditor({ params }: { params: Promise<{ id: 
         )}
       </section>
 
+      {ai === "OK" && <StoryDraft studentId={id} titleId="story-title" stepsId="story-steps" />}
+
       <section className="card">
         <h2>{t("story.form.add")}</h2>
         <ActionForm action={saveStoryAction} className="stack">
           <input type="hidden" name="studentId" value={id} />
-          <label>{t("story.form.title")}<input name="title" maxLength={60} placeholder={t("story.form.titleExample")} required /></label>
+          <label>{t("story.form.title")}<input id="story-title" name="title" maxLength={60} placeholder={t("story.form.titleExample")} required /></label>
           <label>
             {t("story.form.steps")}
-            <textarea name="steps" rows={MAX_STORY_STEPS - 2} placeholder={t("story.form.stepsExample")} required />
+            <textarea id="story-steps" name="steps" rows={MAX_STORY_STEPS - 2} placeholder={t("story.form.stepsExample")} required />
           </label>
           <p className="muted small">{t("story.form.stepsHint")}</p>
           <div><button className="btn primary" type="submit">{t("story.form.add")}</button></div>

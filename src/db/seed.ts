@@ -243,6 +243,11 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
     { studentId: miras, enabled: true, video: true, unsupervised: true, changedById: gulnar, changedAt: roomAt },
     { studentId: aliya, enabled: true, video: true, unsupervised: false, changedById: erlan, changedAt: roomAt },
   ]).run();
+
+  // AI help: the demo school has it on; Miras's mother allowed it, Aliya's father has not decided yet,
+  // so the demo shows both the AI buttons and the hint that a parent's permission is needed.
+  db.insert(s.aiSettings).values({ schoolId, enabled: true, changedById: admin, changedAt: roomAt }).run();
+  db.insert(s.aiConsents).values({ studentId: miras, allowed: true, changedById: gulnar, changedAt: roomAt }).run();
 }
 
 /** Demo data for technique trials, Miras's passport, class-wide supports and the lesson board of 3 «Б». */

@@ -12,3 +12,6 @@ services:
         value: "on"
       - key: DEMO_MODE
         value: "on"
+      # AI help: Render asks for the Gemini key when the blueprint is created; leave it empty to run without AI.
+      - key: GEMINI_API_KEY
+        sync: false

@@ -9,6 +9,7 @@ import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
 import * as X from "@/lib/flex-services";
+import * as AI from "@/lib/ai-services";
 import { LoadCard } from "@/components/flex/LoadCard";
 import { DealBadge, DealInbox } from "@/components/flex/Deals";
 import { ActualTime } from "@/components/flex/ActualTime";
@@ -74,7 +75,7 @@ export default async function ParentHomework({ searchParams }: { searchParams: P
       )}
       <section className="card">
         <h2>{t("phw.newTitle")}</h2>
-        <HomeworkForm studentId={child.id} defaultDue={D.nextSchoolDay(S.today())} />
+        <HomeworkForm studentId={child.id} defaultDue={D.nextSchoolDay(S.today())} ai={await AI.aiGate(db, user, child.id, "CREATE_HOMEWORK")} />
       </section>
     </Shell>
   );

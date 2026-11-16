@@ -10,6 +10,8 @@ import * as F from "@/lib/feature-services";
 import * as S from "@/lib/services";
 import * as D from "@/lib/domain";
 import { getT } from "@/lib/i18n/server";
+import * as AI from "@/lib/ai-services";
+import { SoftenButton } from "@/components/ai/SoftenButton";
 
 export default async function ChatWith({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("TEACHER", "PARENT", "PSYCHOLOGIST");
@@ -19,6 +21,7 @@ export default async function ChatWith({ params }: { params: Promise<{ id: strin
   if (!(await can(db, user, "CHAT", id))) notFound();
   const { student } = await S.getStudent(db, id);
   const list = await F.openChat(db, user, id);
+  const ai = await AI.aiGate(db, user, id, "WRITE_NOTE");
   return (
     <Shell current="/chat">
       <div className="stack" style={{ gap: 2 }}>
@@ -43,6 +46,7 @@ export default async function ChatWith({ params }: { params: Promise<{ id: strin
           <input type="hidden" name="studentId" value={id} />
           <label className="sr-only" htmlFor="chat-text">{t("chat.placeholder")}</label>
           <textarea id="chat-text" name="text" rows={3} maxLength={F.MAX_CHAT_LENGTH} placeholder={t("chat.placeholder")} required />
+          {ai === "OK" && <SoftenButton studentId={id} targetId="chat-text" />}
           <div><button className="btn primary" type="submit">{t("chat.send")}</button></div>
         </ActionForm>
       </section>

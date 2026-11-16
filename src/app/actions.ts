@@ -15,6 +15,7 @@ import * as C from "@/lib/concept-services";
 import * as R from "@/lib/reading-services";
 import * as Q from "@/lib/room-services";
 import * as X from "@/lib/flex-services";
+import * as AI from "@/lib/ai-services";
 import { roomHub } from "@/lib/room/hub";
 import { flushOutbox } from "@/lib/mailer";
 import { demoEnabled } from "@/lib/demo-mode";
@@ -241,6 +242,8 @@ export async function consentAction(_: ActionState, fd: FormData): Promise<Actio
     ? run(async (a) => {
         const db = getDb();
         await S.revokeConsent(db, a, studentId);
+        // AI help ends with the consent and must be allowed again after a new one.
+        await AI.setAiConsent(db, a, studentId, false);
         // Without consent the child cannot be in the quiet room either, also not in one that is open now.
         roomHub().applyParentChoice(studentId, { enabled: false, video: false });
         const { student } = await S.getStudent(db, studentId);
@@ -564,4 +567,54 @@ export async function moveSeatAction(_: ActionState, fd: FormData): Promise<Acti
   // Each place of the plan is a button whose value is "row-col".
   const [row, col] = str(fd, "pos").split("-").map((n) => Number.parseInt(n, 10));
   return run((a) => X.moveSeat(getDb(), a, { studentId: str(fd, "studentId"), row, col }), "flash.seatMoved");
+}
+
+/* ---------- AI help (Gemini): only adults, only where the school and the parent allowed it ---------- */
+
+export async function schoolAiAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const on = str(fd, "intent") === "on";
+  return run((a) => AI.setSchoolAi(getDb(), a, on), on ? "flash.aiSchoolOn" : "flash.aiSchoolOff");
+}
+
+export async function aiConsentAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const on = str(fd, "intent") === "allow";
+  return run((a) => AI.setAiConsent(getDb(), a, str(fd, "studentId"), on), on ? "flash.aiConsentOn" : "flash.aiConsentOff");
+}
+
+export type AiReply<T> = { ok: true; data: T; source: "GEMINI" | "OFFLINE"; fallback: string | null } | { ok: false; error: string };
+
+/** Runs one AI request and turns expected failures into a message in the reader's language. */
+async function runAi<T>(fn: (a: Actor, lang: "ru" | "kk") => Promise<AI.AiResult<T>>): Promise<AiReply<T>> {
+  const { lang, t } = await getT();
+  try {
+    const res = await fn(await actor(), lang);
+    return { ok: true, data: res.data, source: res.source, fallback: res.fallback };
+  } catch (e) {
+    if (e instanceof S.UserError) return { ok: false, error: e.msgs.map((m) => msgText(lang, m)).join(" ") };
+    if (e instanceof AccessDenied) return { ok: false, error: t("access.denied") };
+    if (e instanceof z.ZodError) return { ok: false, error: t("err.fields") };
+    throw e;
+  }
+}
+
+const fileSchema = z.object({ mime: z.string().max(80), data: z.string().max(8_000_000) });
+
+export async function aiPhotoStepsAction(input: { studentId: string; mime: string; data: string }) {
+  const schema = z.object({ studentId: z.string().uuid() }).merge(fileSchema);
+  return runAi((a, lang) => AI.photoToSteps(getDb(), a, { ...schema.parse(input), lang }));
+}
+
+export async function aiVoiceMarksAction(input: { studentId: string; date: string; text?: string; audio?: { mime: string; data: string } }) {
+  const schema = z.object({ studentId: z.string().uuid(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), text: z.string().max(4000).optional(), audio: fileSchema.optional() });
+  return runAi((a, lang) => AI.voiceToMarks(getDb(), a, { ...schema.parse(input), lang }));
+}
+
+export async function aiSoftenAction(input: { studentId: string; text: string }) {
+  const schema = z.object({ studentId: z.string().uuid(), text: z.string().max(4000) });
+  return runAi((a, lang) => AI.softenText(getDb(), a, { ...schema.parse(input), lang }));
+}
+
+export async function aiStoryAction(input: { studentId: string; situation: string }) {
+  const schema = z.object({ studentId: z.string().uuid(), situation: z.string().max(1000) });
+  return runAi((a, lang) => AI.draftStory(getDb(), a, { ...schema.parse(input), lang }));
 }
