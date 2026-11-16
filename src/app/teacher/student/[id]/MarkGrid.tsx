@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { setMarkAction } from "@/app/actions";
 import { useI18n } from "@/lib/i18n/client";
+import { VoiceMarks } from "@/components/ai/VoiceMarks";
 
 type Value = "YES" | "NO" | "NA";
 type Mark = { goalId: string; lessonNo: number; value: Value };
@@ -16,6 +17,8 @@ export function MarkGrid(props: {
   goals: { id: string; text: string }[];
   initialMarks: Mark[];
   initialLesson: number;
+  /** Show «Отметить голосом» (the school and the parent allowed AI help). */
+  ai?: boolean;
 }) {
   const { t } = useI18n();
   const label: Record<Value, string> = { YES: t("common.yes"), NO: t("common.no"), NA: "—" };
@@ -44,6 +47,27 @@ export function MarkGrid(props: {
     });
   }
 
+  /** Marks suggested by the AI for the current lesson, applied one by one like taps. */
+  function applyMany(list: { goalId: string; value: Value }[]): Promise<boolean> {
+    setError(null);
+    const lessonNo = lesson;
+    return new Promise((resolve) =>
+      start(async () => {
+        let ok = true;
+        for (const m of list) {
+          apply({ goalId: m.goalId, lessonNo, value: m.value });
+          const res = await setMarkAction({ studentId: props.studentId, goalId: m.goalId, date: props.date, lessonNo, value: m.value });
+          if (res?.error) {
+            setError(res.error);
+            ok = false;
+            break;
+          }
+        }
+        resolve(ok);
+      }),
+    );
+  }
+
   return (
     <div className="stack" aria-busy={pending}>
       <div className="lessons" role="group" aria-label={t("mark.lesson")}>
@@ -68,6 +92,7 @@ export function MarkGrid(props: {
         ))}
       </div>
       {error && <p className="msg err" role="alert">{error}</p>}
+      {props.ai && <VoiceMarks studentId={props.studentId} date={props.date} lesson={lesson} goals={props.goals} onApply={applyMany} />}
     </div>
   );
 }

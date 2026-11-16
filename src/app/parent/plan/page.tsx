@@ -3,7 +3,8 @@ import { ActionForm } from "@/components/ActionForm";
 import { ChildSwitch } from "@/components/ChildSwitch";
 import { PlanView } from "@/components/PlanView";
 import { ProposeGoal } from "@/components/ProposeGoal";
-import { approvePlanAction, consentAction } from "@/app/actions";
+import { aiConsentAction, approvePlanAction, consentAction } from "@/app/actions";
+import * as AI from "@/lib/ai-services";
 import { getDb } from "@/db";
 import { pickChild } from "@/lib/children";
 import { requireUser } from "@/lib/session";
@@ -16,7 +17,12 @@ export default async function ParentPlan({ searchParams }: { searchParams: Promi
   const { lang, t } = await getT();
   const db = getDb();
   const { child, kids } = await pickChild(db, user, (await searchParams).child);
-  const [consent, plans] = await Promise.all([S.consentOf(db, child.id), S.plansOf(db, child.id)]);
+  const [consent, plans, aiAllowed, aiSchool] = await Promise.all([
+    S.consentOf(db, child.id),
+    S.plansOf(db, child.id),
+    AI.aiConsentOf(db, child.id),
+    AI.schoolAiEnabled(db, user.schoolId),
+  ]);
   const active = consent && !consent.revokedAt;
   const current = D.planForDate(plans, S.today());
   const upcoming = plans.find((p) => p.status === "ACTIVE" && p.effectiveFrom && p.effectiveFrom > S.today());
@@ -42,6 +48,26 @@ export default async function ParentPlan({ searchParams }: { searchParams: Promi
           )}
         </ActionForm>
       </section>
+
+      {active && (
+        <section className="card ai-box" id="ai">
+          <h2>{t("ai.consent.title")}</h2>
+          <p className="small">{t("ai.consent.body")}</p>
+          <p className="muted small">{t("ai.consent.warn")}</p>
+          {!aiSchool && <p className="muted small">{t("ai.consent.schoolOff")}</p>}
+          <ActionForm action={aiConsentAction} className="row">
+            <input type="hidden" name="studentId" value={child.id} />
+            {aiAllowed ? (
+              <>
+                <span className="pill good">{t("ai.consent.allowed")}</span>
+                <button className="btn" name="intent" value="revoke" type="submit">{t("ai.consent.revoke")}</button>
+              </>
+            ) : (
+              <button className="btn ai" name="intent" value="allow" type="submit">{t("ai.consent.allow")}</button>
+            )}
+          </ActionForm>
+        </section>
+      )}
 
       {pending && (
         <section className="card warn">

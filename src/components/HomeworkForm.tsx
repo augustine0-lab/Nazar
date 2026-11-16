@@ -2,12 +2,17 @@ import { ActionForm } from "./ActionForm";
 import { createHomeworkAction } from "@/app/actions";
 import { getT } from "@/lib/i18n/server";
 import { EST_MAX, EST_MIN } from "@/lib/domain";
+import { PhotoSteps } from "@/components/ai/PhotoSteps";
+import type { AiGate } from "@/lib/ai-services";
 
-export async function HomeworkForm({ studentId, defaultDue }: { studentId: string; defaultDue: string }) {
+/** ai: whether this adult may fill the form from a photo of the task (see ai-services aiGate). */
+export async function HomeworkForm({ studentId, defaultDue, ai }: { studentId: string; defaultDue: string; ai?: AiGate }) {
   const { t } = await getT();
   return (
     <ActionForm action={createHomeworkAction} className="stack">
       <input type="hidden" name="studentId" value={studentId} />
+      {ai === "OK" && <PhotoSteps studentId={studentId} />}
+      {ai === "NO_CONSENT" && <p className="ai-note offline"><span aria-hidden="true">✦</span> {t("ai.gate.NO_CONSENT")}</p>}
       <div className="form-grid">
         <label>{t("hw.subject")}<input name="subject" required placeholder={t("hw.subjectExample")} /></label>
         <label>{t("hw.task")}<input name="title" required placeholder={t("hw.taskExample")} /></label>

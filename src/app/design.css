@@ -170,3 +170,14 @@ img.emoji { width: 1em; height: 1em; display: inline-block; vertical-align: -0.1
 .pet img.emoji { width: 1em; height: 1em; filter: drop-shadow(0 6px 8px rgb(60 40 160 / 0.18)); }
 html[data-calm="1"] .pet img.emoji { filter: none; }
 .sched-item.done .pic img.emoji { filter: grayscale(0.4); }
+
+/* ---------- AI help (Gemini): a soft violet-to-mint edge marks everything the AI suggested ---------- */
+.btn.ai, .chip.ai { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), color-mix(in srgb, var(--accent-2) 10%, var(--surface))); }
+.btn.ai:hover, .chip.ai:hover { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, var(--surface)), color-mix(in srgb, var(--accent-2) 18%, var(--surface))); }
+.ai-box > summary { cursor: pointer; list-style-position: inside; }
+details.ai-box { border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 14px; padding: 10px 14px; }
+.ai-result { border-left: 3px solid; border-image: linear-gradient(var(--accent), var(--accent-2)) 1; padding-left: 12px; }
+.chip.ai-option { border-radius: 14px; white-space: normal; }
+.ai-note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.ai-note > span { color: var(--accent); }
+.ai-note.offline > span { color: var(--star); }

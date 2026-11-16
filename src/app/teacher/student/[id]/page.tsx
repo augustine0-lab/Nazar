@@ -16,6 +16,7 @@ import { getT } from "@/lib/i18n/server";
 import { TrialCard } from "@/components/TrialCard";
 import * as C from "@/lib/concept-services";
 import * as X from "@/lib/flex-services";
+import * as AI from "@/lib/ai-services";
 import { HomeworkForm } from "@/components/HomeworkForm";
 import { LoadCard } from "@/components/flex/LoadCard";
 import { DealInbox } from "@/components/flex/Deals";
@@ -37,6 +38,8 @@ export default async function TeacherStudent({ params, searchParams }: { params:
   const schoolGoals = sum.plan?.goals.filter((g) => g.place === "SCHOOL") ?? [];
   const lesson = date === S.today() ? D.currentLessonNo(school.bellSchedule, S.nowLocal()) : 1;
   const running = canMark ? (await C.trialsOf(db, user, id)).find((x) => x.trial.status === "RUNNING") : undefined;
+  // One gate serves all AI buttons on this page: a teacher who may mark may also write notes and set homework.
+  const ai = canMark ? await AI.aiGate(db, user, id, "MARK") : "DENIED";
   const [load, deals, seat] = canMark
     ? await Promise.all([X.loadOf(db, id), X.dealsToAnswer(db, user, id), X.seatReport(db, user, id)])
     : [null, [], null];
@@ -94,8 +97,10 @@ export default async function TeacherStudent({ params, searchParams }: { params:
               goals={schoolGoals.map((g) => ({ id: g.id, text: L(g.adultText) }))}
               initialMarks={sum.marks.filter((m) => m.lessonNo > 0).map((m) => ({ goalId: m.goalId, lessonNo: m.lessonNo, value: m.value }))}
               initialLesson={lesson}
+              ai={ai === "OK"}
             />
             <p className="muted small">{t("tc.naHint")}</p>
+            {ai === "NO_CONSENT" && <p className="ai-note offline"><span aria-hidden="true">✦</span> {t("ai.gate.NO_CONSENT")}</p>}
           </section>
 
           <section className="card">
@@ -103,7 +108,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
             <ActionForm action={saveNoteAction} className="stack">
               <input type="hidden" name="studentId" value={id} />
               <input type="hidden" name="date" value={date} />
-              <NoteField name="text" id="note" defaultValue={myNote ? L(myNote.note.text) : ""} maxLength={1000} placeholder={t("tc.notePlaceholder")} label={t("tc.noteLabel")} />
+              <NoteField name="text" id="note" defaultValue={myNote ? L(myNote.note.text) : ""} maxLength={1000} placeholder={t("tc.notePlaceholder")} label={t("tc.noteLabel")} aiStudentId={ai === "OK" ? id : undefined} />
               <div className="row">
                 <button className="btn" name="intent" value="save" type="submit">{t("tc.saveNote")}</button>
                 <button className="btn primary" name="intent" value="close" type="submit">{t("tc.closeDay")}</button>
@@ -129,7 +134,7 @@ export default async function TeacherStudent({ params, searchParams }: { params:
           )}
           <details>
             <summary>{t("hw.newFor", { name: student.displayName.split(" ")[0] })}</summary>
-            <div style={{ marginTop: 12 }}><HomeworkForm studentId={id} defaultDue={D.nextSchoolDay(S.today())} /></div>
+            <div style={{ marginTop: 12 }}><HomeworkForm studentId={id} defaultDue={D.nextSchoolDay(S.today())} ai={ai} /></div>
           </details>
         </section>
       )}

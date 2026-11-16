@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["better-sqlite3"],
+  // A photo of a task or a short voice note for the AI goes to the server inside a form action.
+  experimental: { serverActions: { bodySizeLimit: "8mb" } },
   async headers() {
     return [
       {
