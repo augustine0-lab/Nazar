@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { openDb, type DB } from "@/db";
@@ -80,11 +80,11 @@ const studentId = (login: string) => {
 };
 
 type Sent = { url: string; headers: Record<string, string>; body: string };
-function fakeGemini(answer: unknown, status = 200) {
+function fakeGemini(answer: unknown, status = 200, error?: unknown) {
   const sent: Sent[] = [];
   setGeminiFetch((async (url: string, init: RequestInit) => {
     sent.push({ url, headers: init.headers as Record<string, string>, body: String(init.body) });
-    const body = status === 200 ? { candidates: [{ content: { parts: [{ text: JSON.stringify(answer) }] } }], usageMetadata: { promptTokenCount: 120, candidatesTokenCount: 40 }, modelVersion: "gemini-test" } : { error: { code: status } };
+    const body = status === 200 ? { candidates: [{ content: { parts: [{ text: JSON.stringify(answer) }] } }], usageMetadata: { promptTokenCount: 120, candidatesTokenCount: 40 }, modelVersion: "gemini-test" } : (error ?? { error: { code: status } });
     return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
   }) as unknown as typeof fetch);
   return sent;
@@ -177,6 +177,21 @@ describe("AI help on the demo school", () => {
     const b = await AI.photoToSteps(db, actorByLogin("gulnar"), { studentId: studentId("miras"), mime: "image/jpeg", data: Buffer.from("jpeg").toString("base64"), lang: "kk" });
     expect([b.source, b.fallback]).toEqual(["OFFLINE", "FAILED"]);
     expect(b.data.steps[0]).toBe(A.offlineSteps("kk").steps[0]);
+  });
+
+  it("writes Google's reason for a refusal to the server log, without the note", async () => {
+    process.env.GEMINI_API_KEY = "bad-key";
+    fakeGemini({}, 400, { error: { code: 400, status: "INVALID_ARGUMENT", message: "API key not valid. Please pass a valid API key.", details: [{ reason: "API_KEY_INVALID" }] } });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await AI.softenText(db, actorByLogin("aigul"), { studentId: studentId("miras"), text: "Мирас опять мешал", lang: "ru" });
+      expect([res.source, res.fallback]).toEqual(["OFFLINE", "FAILED"]);
+      const line = warn.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(line).toContain("SOFTEN HTTP 400 INVALID_ARGUMENT API_KEY_INVALID API key not valid");
+      expect(line).not.toMatch(/Мирас|мешал|bad-key/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("checks files before sending them", async () => {

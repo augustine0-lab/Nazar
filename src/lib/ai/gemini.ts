@@ -39,6 +39,21 @@ export function setGeminiFetch(f: typeof fetch | null) {
   fetcher = f ?? ((...args) => fetch(...args));
 }
 
+/**
+ * Why Google refused, for the server log: the error code and reason (for example API_KEY_INVALID) and the first
+ * words of Google's message. Google's error messages name fields and settings, not the text we sent.
+ */
+async function errorReason(res: Response): Promise<string> {
+  const data = (await res.json().catch(() => null)) as {
+    error?: { status?: string; message?: string; details?: { reason?: string }[] };
+  } | null;
+  const e = data?.error;
+  if (!e) return "";
+  const reason = e.details?.map((d) => d.reason).filter(Boolean).join(",");
+  const message = (e.message ?? "").replace(/\s+/g, " ").slice(0, 160);
+  return [e.status, reason, message].filter(Boolean).map((x) => ` ${x}`).join("");
+}
+
 export async function askGemini(req: GeminiRequest): Promise<GeminiAnswer> {
   const key = geminiKey();
   if (!key) throw new GeminiError("NO_KEY", "GEMINI_API_KEY is not set");
@@ -64,10 +79,7 @@ export async function askGemini(req: GeminiRequest): Promise<GeminiAnswer> {
     throw new GeminiError("FAILED", `network: ${(e as Error).message}`);
   }
   if (res.status === 429) throw new GeminiError("QUOTA", "rate limit or quota");
-  if (!res.ok) {
-    // The body may echo the request; only the status is kept, never the content.
-    throw new GeminiError("FAILED", `HTTP ${res.status}`);
-  }
+  if (!res.ok) throw new GeminiError("FAILED", `HTTP ${res.status}${await errorReason(res)}`);
   const data = (await res.json().catch(() => null)) as {
     candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
     usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
