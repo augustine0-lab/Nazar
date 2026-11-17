@@ -2,9 +2,10 @@
 // and never reaches a browser. No SDK: one REST call, answers checked by the caller against a fixed shape.
 import "server-only";
 
-export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash";
+// The newest stable Flash. It thinks before answering, so a reply can take several seconds.
+export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 60_000;
 
 export type GeminiPart = { text: string } | { inline_data: { mime_type: string; data: string } };
 
