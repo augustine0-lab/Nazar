@@ -8,6 +8,7 @@ import type { Actor } from "@/lib/access";
 import * as S from "@/lib/services";
 import * as AI from "@/lib/ai-services";
 import * as A from "@/lib/domain/ai";
+import * as G from "@/lib/ai/gemini";
 import { setGeminiFetch } from "@/lib/ai/gemini";
 
 /* ---------- pure rules ---------- */
@@ -191,6 +192,33 @@ describe("AI help on the demo school", () => {
       expect(line).not.toMatch(/Мирас|мешал|bad-key/);
     } finally {
       warn.mockRestore();
+    }
+  });
+
+  it("asks a backup model when the chosen one is busy, and stops at a bad key", async () => {
+    process.env.GEMINI_API_KEY = "test-key";
+    process.env.GEMINI_MODEL = "gemini-busy";
+    const urls: string[] = [];
+    setGeminiFetch((async (url: string) => {
+      urls.push(url);
+      if (urls.length === 1) return new Response(JSON.stringify({ error: { code: 503, status: "UNAVAILABLE", message: "high demand" } }), { status: 503 });
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify({ options: ["У [имя] был трудный день."], serious: false }) }] } }] }), { status: 200 });
+    }) as unknown as typeof fetch);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await AI.softenText(db, actorByLogin("aigul"), { studentId: studentId("miras"), text: "Мирас опять мешал", lang: "ru" });
+      expect(res.source).toBe("GEMINI");
+      expect(urls.map((u) => u.split("/models/")[1].split(":")[0])).toEqual(["gemini-busy", G.BACKUP_GEMINI_MODELS[0]]);
+      const j = await AI.aiJournal(db, actorByLogin("admin"));
+      expect(j.rows[0].call).toMatchObject({ source: "GEMINI", model: G.BACKUP_GEMINI_MODELS[0] });
+
+      const bad = fakeGemini({}, 400, { error: { code: 400, status: "INVALID_ARGUMENT" } });
+      const again = await AI.softenText(db, actorByLogin("aigul"), { studentId: studentId("miras"), text: "Мирас опять мешал", lang: "ru" });
+      expect([again.source, again.fallback]).toEqual(["OFFLINE", "FAILED"]);
+      expect(bad).toHaveLength(1);
+    } finally {
+      warn.mockRestore();
+      delete process.env.GEMINI_MODEL;
     }
   });
 

@@ -4,8 +4,15 @@ import "server-only";
 
 // The newest stable Flash. It thinks before answering, so a reply can take several seconds.
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+// When the chosen model is busy (503) or its free limit is used up (429), the same question goes to these
+// lighter models, which are on the free tier and have their own limits.
+export const BACKUP_GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
-const TIMEOUT_MS = 60_000;
+// The first model may think for a while; a backup only gets a short wait so the whole answer stays under a minute.
+const FIRST_TIMEOUT_MS = 30_000;
+const BACKUP_TIMEOUT_MS = 15_000;
+// Worth asking another model: limits, overload and timeouts. A bad key or a bad request fails on every model.
+const TRY_NEXT = new Set([429, 500, 502, 503, 504]);
 
 export type GeminiPart = { text: string } | { inline_data: { mime_type: string; data: string } };
 
@@ -33,6 +40,8 @@ export class GeminiError extends Error {
 
 export const geminiKey = () => process.env.GEMINI_API_KEY?.trim() || null;
 export const geminiModel = () => process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+/** The chosen model first, then the backups it is not already. */
+export const geminiModels = () => [...new Set([geminiModel(), ...BACKUP_GEMINI_MODELS])];
 
 // Tests swap the network for a fake; the app always uses the real fetch.
 let fetcher: typeof fetch = (...args) => fetch(...args);
@@ -58,8 +67,7 @@ async function errorReason(res: Response): Promise<string> {
 export async function askGemini(req: GeminiRequest): Promise<GeminiAnswer> {
   const key = geminiKey();
   if (!key) throw new GeminiError("NO_KEY", "GEMINI_API_KEY is not set");
-  const model = geminiModel();
-  const body = {
+  const body = JSON.stringify({
     systemInstruction: { parts: [{ text: req.system }] },
     contents: [{ role: "user", parts: req.parts }],
     generationConfig: {
@@ -67,20 +75,37 @@ export async function askGemini(req: GeminiRequest): Promise<GeminiAnswer> {
       responseSchema: req.schema,
       temperature: req.temperature ?? 0.4,
     },
-  };
-  let res: Response;
-  try {
-    res = await fetcher(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-  } catch (e) {
-    throw new GeminiError("FAILED", `network: ${(e as Error).message}`);
+  });
+  const models = geminiModels();
+  const tried: string[] = [];
+  let quotaOnly = true;
+  for (const [i, model] of models.entries()) {
+    let res: Response;
+    try {
+      res = await fetcher(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body,
+        signal: AbortSignal.timeout(i === 0 ? FIRST_TIMEOUT_MS : BACKUP_TIMEOUT_MS),
+      });
+    } catch (e) {
+      quotaOnly = false;
+      tried.push(`${model}: network ${(e as Error).message}`);
+      continue;
+    }
+    if (TRY_NEXT.has(res.status)) {
+      if (res.status !== 429) quotaOnly = false;
+      tried.push(`${model}: HTTP ${res.status}${await errorReason(res)}`);
+      continue;
+    }
+    if (!res.ok) throw new GeminiError("FAILED", `HTTP ${res.status}${await errorReason(res)}`);
+    return readAnswer(res, model);
   }
-  if (res.status === 429) throw new GeminiError("QUOTA", "rate limit or quota");
-  if (!res.ok) throw new GeminiError("FAILED", `HTTP ${res.status}${await errorReason(res)}`);
+  if (quotaOnly) throw new GeminiError("QUOTA", `rate limit or quota (${tried.join("; ")})`);
+  throw new GeminiError("FAILED", tried.join("; "));
+}
+
+async function readAnswer(res: Response, model: string): Promise<GeminiAnswer> {
   const data = (await res.json().catch(() => null)) as {
     candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
     usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
