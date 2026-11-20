@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
   AppWindow, Armchair, Backpack, Bell, BicepsFlexed, BookHeart, BookOpen, BookOpenText, CalendarClock, CalendarDays, Camera,
   Check, CircleCheck, CircleX, ClipboardList, Dices, DoorOpen, Download, Eye, Gift, GraduationCap, Handshake, HeartHandshake,
@@ -37,15 +38,19 @@ export function I({ name }: { name: IconName }) {
 
 /** The Nazar mark: an eye in soft gradient rings. */
 export function BrandMark({ size = 28 }: { size?: number }) {
+  // Each mark owns its gradient: with one shared id, a mark inside a hidden
+  // block (the login hero on a phone) took the gradient with it and every other
+  // mark on the page lost its colour.
+  const ring = `nz-ring-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <svg className="brand-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <defs>
-        <linearGradient id="nz-ring" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={ring} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#7b6cf6" />
           <stop offset="1" stopColor="#3fb6a8" />
         </linearGradient>
       </defs>
-      <circle cx="16" cy="16" r="16" fill="url(#nz-ring)" />
+      <circle cx="16" cy="16" r="16" fill={`url(#${ring})`} />
       <path d="M4.5 16c3-5 7-7.5 11.5-7.5S24.5 11 27.5 16c-3 5-7 7.5-11.5 7.5S7.5 21 4.5 16Z" fill="#fff" />
       <circle cx="16" cy="16" r="5" fill="#1c1b33" />
       <circle cx="17.8" cy="14.2" r="1.6" fill="#fff" />

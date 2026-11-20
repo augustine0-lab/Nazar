@@ -1,0 +1,175 @@
+/* The login hero's product shot. Nazar's tokens drive the kit's, so the dark
+   theme and calm mode reach inside the stage too. Scoped to .nz-team. */
+
+.nz-stage { margin: 0; width: 100%; }
+
+.nz-team.ss-stage,
+.nz-team .ss-stage {
+  --gutter: 32px;
+  --ss-font: var(--font-ui);
+  --ss-accent: var(--accent);
+  --ss-accent-soft: var(--accent-soft);
+  --ss-surface: var(--surface);
+  --ss-raised: var(--surface);
+  --ss-chrome: var(--surface);
+  --ss-canvas: var(--bg);
+  --ss-text: var(--muted);
+  --ss-text-strong: var(--fg);
+  --ss-line: var(--line);
+  --ss-radius-window: 16px;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Pinned top-left, about a sixth past the bottom of the stage. */
+.nz-team .nz-team-window {
+  position: absolute;
+  top: var(--gutter);
+  left: var(--gutter);
+  width: 520px;
+  height: 560px;
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18), 0 30px 60px -12px rgb(20 10 80 / 0.45), 0 18px 36px -18px rgb(0 0 0 / 0.35);
+}
+
+.nz-team .nz-team-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px 0;
+  background:
+    radial-gradient(260px 200px at 0% 0%, var(--glow-1), transparent 70%),
+    radial-gradient(300px 220px at 100% 0%, var(--glow-2), transparent 70%),
+    var(--bg);
+  height: 100%;
+}
+
+.nz-team .nz-team-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--fg);
+}
+
+.nz-team .nz-team-class { margin-top: 2px; font-size: 11px; line-height: 1.3; color: var(--muted); }
+
+.nz-team .nz-team-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 292px;
+  padding: 14px 14px 6px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 1px rgb(30 20 90 / 0.04), 0 10px 30px -14px rgb(60 40 160 / 0.25);
+}
+
+.nz-team .nz-team-cardhead { display: flex; align-items: center; height: 18px; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.nz-team .nz-team-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.nz-team .nz-team-pct { display: inline-flex; align-items: baseline; gap: 4px; font-size: 13px; font-weight: 700; color: var(--fg); font-variant-numeric: tabular-nums; }
+.nz-team .nz-team-of { font-size: 10px; font-weight: 500; color: var(--muted); }
+
+.nz-team .nz-team-lessons { display: flex; gap: 6px; margin-bottom: 4px; }
+.nz-team .nz-team-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 10.5px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--fg);
+}
+.nz-team .nz-team-chip i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); transition: background 0.3s ease; }
+.nz-team .nz-team-chip[data-done] i { background: var(--accent); }
+.nz-team .nz-team-chip[data-on] { border-color: transparent; background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.nz-team .nz-team-chip[data-on] i { background: color-mix(in srgb, var(--accent-fg) 45%, transparent); }
+.nz-team .nz-team-chip[data-on][data-done] i { background: var(--accent-fg); }
+
+.nz-team .nz-team-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 108px;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.nz-team .nz-team-row:first-of-type { border-top: 0; }
+.nz-team .nz-team-goal { font-size: 12px; line-height: 1.35; color: var(--fg); }
+
+/* Nazar's Да / Нет / –: a bordered group, the chosen one tinted. */
+.nz-team .nz-team-seg {
+  --ss-row: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.nz-team .nz-team-seg .ss-seg__thumb {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100% / var(--n));
+  border-radius: 0;
+  background: var(--accent-soft);
+  box-shadow: none;
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nz-team .nz-team-seg[data-empty] .ss-seg__thumb { opacity: 0; }
+.nz-team .nz-team-seg .ss-seg__option { padding: 0; font-size: 11px; font-weight: 600; color: var(--muted); }
+.nz-team .nz-team-seg .ss-seg__option + .ss-seg__option { border-left: 1px solid var(--line); }
+.nz-team .nz-team-seg:not([data-empty]) .ss-seg__option[data-on] { color: var(--accent); }
+.nz-team .nz-team-seg .ss-seg__option[data-hover] { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.nz-team .nz-team-seg[data-filled] .ss-seg__option { color: transparent; }
+
+/* Nazar's floating top bar, as filler: the first item is the page. */
+.nz-team .nz-team-nav {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 6px 20px -12px rgb(60 40 160 / 0.3);
+}
+.nz-team .nz-team-nav span { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; }
+.nz-team .nz-team-nav span[data-on] { background: var(--surface); box-shadow: 0 2px 8px -2px rgb(60 40 160 / 0.22); }
+.nz-team .nz-team-nav span[data-on] .ss-bar { background: color-mix(in srgb, var(--accent) 55%, transparent) !important; }
+
+/* The day's note for the parent, below the marks: filler that carries the page on. */
+.nz-team .nz-team-note { gap: 12px; padding: 14px; }
+.nz-team .nz-team-area { display: flex; flex-direction: column; gap: 8px; height: 64px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.nz-team .nz-team-phrases { display: flex; gap: 6px; }
+.nz-team .nz-team-phrases span { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; background: var(--surface-2); }
+
+/* Straddles the window's right edge, about a third outside, over the filler column. */
+.nz-team .nz-team-phone {
+  position: absolute;
+  top: 232px;
+  right: var(--gutter);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.04), 0 14px 32px -8px rgb(20 10 80 / 0.35), 0 30px 50px -20px rgb(20 10 80 / 0.45);
+}
+
+/* Narrow (a hero about 450 to 520 wide): a tighter crop round the marks,
+   and the phone comes up across the window's foot with the note on it. */
+.nz-team [data-layout="compact"] { --gutter: 16px; }
+.nz-team [data-layout="compact"] .nz-team-window { top: var(--gutter); left: var(--gutter); width: 420px; height: 300px; }
+.nz-team [data-layout="compact"] .nz-team-nav,
+.nz-team [data-layout="compact"] .nz-team-head,
+.nz-team [data-layout="compact"] .nz-team-note { display: none; }
+.nz-team [data-layout="compact"] .nz-team-phone { top: 262px; right: auto; left: 72px; }
+
+/* Calm mode: flat surfaces, no glow behind the page or the phone. */
+html[data-calm="1"] .nz-team .nz-team-body { background: var(--bg); }
+html[data-calm="1"] .nz-team .nz-team-phone .ss-phone__screen { background: #7a76c4 !important; }
