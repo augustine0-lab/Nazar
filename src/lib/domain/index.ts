@@ -253,3 +253,4 @@ export * from "./flex";
 export * from "./gaze";
 export * from "./scan";
 export * from "./voice";
+export * from "./wow";

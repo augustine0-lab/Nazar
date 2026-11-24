@@ -22,6 +22,8 @@ import { getT } from "@/lib/i18n/server";
 import * as X from "@/lib/flex-services";
 import { LoadCard } from "@/components/flex/LoadCard";
 import { SoundCard } from "@/components/flex/SoundCard";
+import { HardMinutes } from "@/components/wow/HardMinutes";
+import * as W from "@/lib/wow-services";
 
 export default async function PsychStudent({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("PSYCHOLOGIST");
@@ -31,7 +33,7 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
   if (!(await can(db, user, "VIEW", id))) notFound();
   const { student, cls } = await S.getStudent(db, id);
   const canEdit = await can(db, user, "EDIT_PLAN", id);
-  const [load, sound] = await Promise.all([X.loadOf(db, id), X.soundReport(db, user, id)]);
+  const [load, sound, hard] = await Promise.all([X.loadOf(db, id), X.soundReport(db, user, id), W.hardMapOf(db, user, id)]);
   const [moods, scales, schedule, series, plans, techniques, checks, proposals, health, bag, tried] = await Promise.all([
     F.moodsOf(db, id, D.addDays(S.today(), -6)),
     F.scalesOf(db, user, id),
@@ -71,6 +73,19 @@ export default async function PsychStudent({ params }: { params: Promise<{ id: s
               : t("ps.hintSimplify", { goal: L(g.adultText), n: D.SIMPLIFY_BAR * 100 })}
           </p>
         ))}
+      </section>
+
+      <section className="card" id="hard">
+        <div className="row between"><h2><I name="grid" /> {t("hm.title")}</h2><span className="eyebrow">{t("hm.eyebrow")}</span></div>
+        <p className="muted small">{t("hm.lead")}</p>
+        <HardMinutes
+          lessons={hard.lessons}
+          layers={hard.layers}
+          notes={Object.fromEntries(Object.entries(hard.notes).map(([d, ns]) => [d, ns.map(L)]))}
+          shortSleepDays={hard.shortSleepDays}
+          lowMoodDays={hard.lowMoodDays}
+          weeks={W.HARD_WEEKS}
+        />
       </section>
 
       {canEdit && (

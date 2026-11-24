@@ -8,6 +8,7 @@ import { SceneArt } from "./SceneArt";
 import { SpeakButton } from "./SpeakButton";
 import { GazeControl } from "./gaze/GazeControl";
 import { useGaze } from "./gaze/useGaze";
+import { DoodleGallery, DoodlePad, doodleKey } from "./wow/DoodlePad";
 import type { Chapter } from "@/lib/domain/reading";
 import { SPEEDS, isSpeed, recordedTimeline, sameWord, sentenceJump, silentTimeline, wordAt, type Recording, type Speed, type Timeline } from "@/lib/domain/voice";
 import { useI18n } from "@/lib/i18n/client";
@@ -70,6 +71,7 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
 
   const [speed, setSpeed] = useState<Speed>(1);
   const [captions, setCaptions] = useState(projector);
+  const [doodle, setDoodle] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [voiceFailed, setVoiceFailed] = useState(false);
   const useVoice = voiceOn && !voiceFailed;
@@ -390,9 +392,15 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
         <button type="button" className="btn quiet" aria-pressed={captions} onClick={() => setCaptions((c) => !c)}>
           <span className="lt-cc-icon" aria-hidden="true">CC</span> {t("read.captions")}
         </button>
+        {!projector && (
+          <button type="button" className="btn quiet" aria-pressed={doodle} onClick={() => setDoodle((d) => !d)} title={t("dd.toggleHint")}>
+            <I name="brush" /> {t("dd.toggle")}
+          </button>
+        )}
         {voiceFailed && <span className="muted small" role="status">{t("read.voiceFailed")}</span>}
       </div>
 
+      <div className={doodle ? "lt-read with-doodle" : "lt-read"}>
       <div className={`lt-text${held ? " held" : ""}${back ? " back" : ""}`} key={`t${i}`} ref={textRef}>
         {held && (
           <div className="lt-wait" role="status">
@@ -410,6 +418,10 @@ export function LivingText({ id, title, source, chapters, projector = false }: {
           ))}
         </p>
       </div>
+      {doodle && <DoodlePad storeKey={doodleKey(id, i)} />}
+      </div>
+
+      {finished && !projector && <DoodleGallery readingId={id} chapters={chapters.map((_, k) => name(k))} />}
 
       <div className="lt-controls no-print">
         <button type="button" className="btn" onClick={() => { go(i - 1); setStarted(true); }} disabled={i === 0}>← {t("read.prev")}</button>

@@ -16,6 +16,7 @@ import * as R from "@/lib/reading-services";
 import * as Q from "@/lib/room-services";
 import * as X from "@/lib/flex-services";
 import * as AI from "@/lib/ai-services";
+import * as W from "@/lib/wow-services";
 import { roomHub } from "@/lib/room/hub";
 import { flushOutbox } from "@/lib/mailer";
 import { demoEnabled } from "@/lib/demo-mode";
@@ -617,4 +618,20 @@ export async function aiSoftenAction(input: { studentId: string; text: string })
 export async function aiStoryAction(input: { studentId: string; situation: string }) {
   const schema = z.object({ studentId: z.string().uuid(), situation: z.string().max(1000) });
   return runAi((a, lang) => AI.draftStory(getDb(), a, { ...schema.parse(input), lang }));
+}
+
+/* ---------- «Моя четверть в сторис» ---------- */
+
+export async function chooseRecapGoalAction(input: { studentId: string; goalId: string }): Promise<{ ok: true; goal: string } | { ok: false; error: string }> {
+  const { t } = await getT();
+  try {
+    const parsed = z.object({ studentId: z.string().uuid(), goalId: z.string().uuid() }).parse(input);
+    const res = await W.chooseRecapGoal(getDb(), await actor(), parsed);
+    revalidatePath("/notifications");
+    return { ok: true, goal: res.goal };
+  } catch (e) {
+    if (e instanceof AccessDenied) return { ok: false, error: t("access.denied") };
+    if (e instanceof z.ZodError) return { ok: false, error: t("err.fields") };
+    throw e;
+  }
 }
