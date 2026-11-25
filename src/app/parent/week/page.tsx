@@ -1,3 +1,4 @@
+import { I } from "@/components/ui/Icon";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { ChildSwitch } from "@/components/ChildSwitch";
@@ -46,6 +47,7 @@ export default async function ParentWeek({ searchParams }: { searchParams: Promi
           <span className="muted">{t("wr.range", { from: D.formatDate(monday, lang), to: D.formatDate(D.addDays(monday, 6), lang) })}</span>
         </div>
         <div className="row no-print">
+          <Link className="btn" href={`/parent/recap?child=${child.id}`}><I name="recap" /> {t("rc.parentLink")}</Link>
           <Link className="btn quiet" href={link(D.addDays(monday, -7))}>{t("wr.prev")}</Link>
           {monday < thisMonday && <Link className="btn quiet" href={link(D.addDays(monday, 7))}>{t("wr.next")}</Link>}
         </div>

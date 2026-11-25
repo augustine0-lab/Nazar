@@ -30,7 +30,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
       ) : (
         <>
           <p className="muted">{t("board.lead")}</p>
-          <LessonBoard key={JSON.stringify(steps)} steps={steps} />
+          <LessonBoard key={JSON.stringify(steps)} steps={steps} classId={cls.id} />
           <section className="card">
             <details open={!steps.length}>
               <summary><h2 style={{ display: "inline" }}>{t("board.edit")}</h2></summary>

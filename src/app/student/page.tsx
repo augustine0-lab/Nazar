@@ -130,6 +130,16 @@ export default async function StudentHome() {
 
         {!evening && bagCard}
 
+        <Link href="/student/recap" className="card list-link recap-card">
+          <span><I name="recap" /> <b>{t("rc.card")}</b></span>
+          <span className="muted small">{t("rc.cardLead")}</span>
+        </Link>
+
+        <Link href="/student/calm" className="card list-link">
+          <span><I name="wind" /> <b>{t("bl.pageTitle")}</b></span>
+          <span className="muted small">{t("bl.card")}</span>
+        </Link>
+
         <Link href="/room" className="card list-link">
           <span><I name="room" /> <b>{t("room.title")}</b></span>
           <span className="muted small">{t("room.st.card")}</span>

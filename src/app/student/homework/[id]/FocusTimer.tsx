@@ -7,6 +7,8 @@ import { exerciseForCycle, selfCheckAt, timerState } from "@/lib/domain";
 import { BREAK_EMOJI } from "@/lib/icons";
 import { useI18n } from "@/lib/i18n/client";
 import { isNoisePlaying } from "@/lib/sound-state";
+import { BreathBalloon } from "@/components/wow/BreathBalloon";
+import { CleanDesk } from "@/components/wow/CleanDesk";
 
 const CIRC = 2 * Math.PI * 60;
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -52,6 +54,13 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
     }
   }
 
+  /** «Чистый стол» starts the timer by itself once the desk is clear. */
+  function begin() {
+    if (startedAt !== null) return;
+    setNow(Date.now());
+    setStartedAt(Date.now());
+  }
+
   async function answer(onTask: boolean) {
     setAsk(false);
     const res = await selfCheckAction(studentId, homeworkId, onTask, isNoisePlaying());
@@ -74,6 +83,15 @@ export function FocusTimer({ studentId, homeworkId, workMin, breakMin }: { stude
           <button className="btn" type="button" onClick={() => { setStartedAt(null); setPausedElapsed(0); setAsk(false); }}>{t("tm.reset")}</button>
         </div>
         <p className="muted small">{t("tm.hint", { work: workMin, brk: breakMin })}</p>
+        {!running && elapsed === 0 && (
+          <div className="before-start" role="group" aria-label={t("bs.title")}>
+            <span className="eyebrow">{t("bs.title")}</span>
+            <div className="row">
+              <BreathBalloon compact />
+              <CleanDesk onClear={begin} />
+            </div>
+          </div>
+        )}
         {running && st.phase === "BREAK" && (
           <div className="movebreak" role="status">
             <b><span aria-hidden="true"><Emoji e={BREAK_EMOJI[exerciseForCycle(st.cycle)]} /></span> {t("mv.title")}</b>

@@ -17,6 +17,7 @@ import { gaze } from "./messages/gaze";
 import { scan } from "./messages/scan";
 import { pwa } from "./messages/pwa";
 import { ai } from "./messages/ai";
+import { wow } from "./messages/wow";
 
 export type Lang = "ru" | "kk";
 export const LANGS: readonly Lang[] = ["ru", "kk"];
@@ -26,7 +27,7 @@ export const LOCALE: Record<Lang, string> = { ru: "ru-RU", kk: "kk-KZ" };
 
 /** Every message exists in both languages: [russian, kazakh]. A missing translation fails the type check. */
 type Entry = readonly [ru: string, kk: string];
-const ALL = { ...common, ...errors, ...login, ...teacher, ...parent, ...student, ...psych, ...admin, ...demo, ...features, ...more, ...concepts, ...reading, ...room, ...flex, ...gaze, ...scan, ...pwa, ...ai } satisfies Record<string, Entry>;
+const ALL = { ...common, ...errors, ...login, ...teacher, ...parent, ...student, ...psych, ...admin, ...demo, ...features, ...more, ...concepts, ...reading, ...room, ...flex, ...gaze, ...scan, ...pwa, ...ai, ...wow } satisfies Record<string, Entry>;
 
 export type MsgKey = keyof typeof ALL;
 export type Params = Record<string, string | number>;

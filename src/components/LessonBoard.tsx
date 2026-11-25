@@ -5,6 +5,8 @@ import { I } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import type { BoardStep } from "@/lib/domain/concepts";
 import { useI18n } from "@/lib/i18n/client";
+import { BoardCaptions } from "./wow/BoardCaptions";
+import { QuietTree } from "./wow/QuietTree";
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
@@ -12,8 +14,11 @@ const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padSta
  * The lesson plan for the whole class on the board: what we do now, how much time is left, what comes next.
  * It runs only in the teacher's browser; nothing about pupils is shown. When time is up it waits for the teacher.
  */
-export function LessonBoard({ steps }: { steps: BoardStep[] }) {
+export function LessonBoard({ steps, classId }: { steps: BoardStep[]; classId: string }) {
   const { t } = useI18n();
+  const [captions, setCaptions] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [tree, setTree] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [i, setI] = useState(0);
   const [left, setLeft] = useState(steps[0]?.minutes * 60 || 0);
@@ -43,7 +48,13 @@ export function LessonBoard({ steps }: { steps: BoardStep[] }) {
         <button className="btn" type="button" onClick={() => go(i - 1)} disabled={i === 0}>← {t("board.back")}</button>
         <button className="btn" type="button" onClick={() => go(i + 1)} disabled={i === steps.length - 1}>{t("board.next")} →</button>
         <button className="btn" type="button" onClick={fullscreen}><I name="fullscreen" /> {t("board.fullscreen")}</button>
+        <button className="btn" type="button" aria-pressed={captions} onClick={() => setCaptions((x) => !x)}><I name="pin" /> {t("cap.toggle")}</button>
+        {captions && (
+          <button className="btn" type="button" aria-pressed={listening} onClick={() => setListening((x) => !x)}><I name="mic" /> {t(listening ? "cap.micOff" : "cap.micOn")}</button>
+        )}
+        <button className="btn" type="button" aria-pressed={tree} onClick={() => setTree((x) => !x)}><I name="leaf" /> {t("qt.toggle")}</button>
       </div>
+      {captions && <p className="muted small no-print">{t("cap.lead")}</p>}
       <div className="board" ref={ref}>
         <div className="board-now" aria-live="polite">
           <span className="eyebrow">{t("board.now", { n: i + 1, total: steps.length })}</span>
@@ -55,6 +66,7 @@ export function LessonBoard({ steps }: { steps: BoardStep[] }) {
             i < steps.length - 1 && <span className="board-next">{t("board.then", { text: `${steps[i + 1].icon} ${steps[i + 1].text}` })}</span>
           )}
         </div>
+        <div className="board-side">
         <svg className="board-ring" viewBox="0 0 100 100" role="timer" aria-label={t("board.left", { time: mmss(left) })}>
           <circle cx="50" cy="50" r={r} fill="none" stroke="var(--surface-2)" strokeWidth="9" />
           <circle
@@ -63,6 +75,9 @@ export function LessonBoard({ steps }: { steps: BoardStep[] }) {
           />
           <text x="50" y="57" textAnchor="middle" fontSize="20">{mmss(left)}</text>
         </svg>
+        {tree && <QuietTree />}
+        </div>
+        {captions && <BoardCaptions storeKey={`nazar.board.pins.${classId}`} listening={listening} onListening={setListening} />}
         <ol className="board-steps">
           {steps.map((s, k) => (
             <li key={k} className={k === i ? "now" : k < i ? "past" : ""}>

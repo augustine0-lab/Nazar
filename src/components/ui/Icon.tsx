@@ -2,7 +2,7 @@ import { useId } from "react";
 import {
   AppWindow, Armchair, Backpack, Bell, BicepsFlexed, BookHeart, BookOpen, BookOpenText, CalendarClock, CalendarDays, Camera,
   Check, CircleCheck, CircleX, ClipboardList, Dices, DoorOpen, Download, Eye, Gift, GraduationCap, Handshake, HeartHandshake,
-  Headphones, House, Leaf, LifeBuoy, Lightbulb, LogOut, Maximize, MessageCircle, Mic, NotebookPen, Pause, Phone, PiggyBank,
+  Headphones, House, Leaf, LifeBuoy, Lightbulb, LogOut, Maximize, MessageCircle, Mic, NotebookPen, Pause, Phone, PiggyBank, Pin, Wind, Brush, Grid3x3, Clapperboard, ScanEye,
   Play, Presentation, Printer, School, Smartphone, Sparkles, Star, Sun, TriangleAlert, UserRound, UsersRound, Volume2, VolumeX,
   type LucideIcon,
 } from "lucide-react";
@@ -21,6 +21,7 @@ const ICONS = {
   print: Printer, speak: Volume2, mute: VolumeX, camera: Camera, mic: Mic, book: BookOpen, seat: Armchair, window: AppWindow,
   door: DoorOpen, dice: Dices, warn: TriangleAlert, yes: CircleCheck, no: CircleX, strong: BicepsFlexed, star: Star,
   leaf: Leaf, call: Phone, check: Check, eye: Eye, sparkles: Sparkles,
+  pin: Pin, wind: Wind, brush: Brush, grid: Grid3x3, recap: Clapperboard, desk: ScanEye,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

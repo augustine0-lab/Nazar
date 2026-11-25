@@ -1,5 +1,6 @@
 // Recreates the database with a demo school. All people and data are fictional.
 import fs from "node:fs";
+import { and, eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { openDb, type DB } from "./index";
 import * as s from "./schema";
@@ -156,7 +157,9 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
   const moved = D.schoolDaysBefore(demoDay, 9)[0];
   // At the back desk his lessons went a little worse, so the seat comparison shows a clear change on any demo day,
   // whatever the random draws and the day of the week.
-  const fill = (studentId: string, goalIds: string[], base: number[], step: number, homeGoal?: string, homeAuthor?: string, worseBefore?: string) => {
+  // Miras also finds the last lessons on Monday hard (fictional), so «Карта трудных минут» has a pattern to show;
+  // the other lessons go a little better, so his stars (and his pet) stay where they were.
+  const fill = (studentId: string, goalIds: string[], base: number[], step: number, homeGoal?: string, homeAuthor?: string, worseBefore?: string, hardMonday = false) => {
     let d = fourWeeksAgo;
     let week = 0;
     while (d <= demoDay) {
@@ -166,7 +169,7 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
         for (let lesson = 1; lesson <= lessons; lesson++) {
           goalIds.forEach((goalId, gi) => {
             // Homework is only written down in the last two lessons of the day.
-            const penalty = worseBefore && d < worseBefore ? 0.15 : 0;
+            const penalty = (worseBefore && d < worseBefore ? 0.15 : 0) + (hardMonday ? (D.weekday(d) === 1 && lesson >= 4 ? 0.35 : -0.05) : 0);
             const value: s.MarkValue = gi === 2 && lesson < 4 ? "NA" : rand() < Math.min(0.95, base[gi] + step * week - penalty) ? "YES" : "NO";
             db.insert(s.marks).values({ studentId, goalId, date: d, lessonNo: lesson, value, authorId: aigul }).run();
           });
@@ -179,7 +182,12 @@ export function seed(db: DB, todayDate = D.isoDate(new Date())) {
       d = D.addDays(d, 1);
     }
   };
-  fill(miras, mishaPlan.goalIds.slice(0, 3), [0.45, 0.25, 0.6], 0.1, mishaPlan.goalIds[3], gulnar, moved);
+  fill(miras, mishaPlan.goalIds.slice(0, 3), [0.45, 0.25, 0.6], 0.1, mishaPlan.goalIds[3], gulnar, moved, true);
+  // Two of the teacher's notes on those Mondays, for the psychologist to find behind the map's cell.
+  const mondays = D.schoolDaysBefore(demoDay, 15).filter((d) => D.weekday(d) === 1 && d !== D.previousSchoolDay(demoDay)).slice(-2);
+  mondays.forEach((date, k) =>
+    db.update(s.dayNotes).set({ text: k ? "@demo.note.monday2" : "@demo.note.monday" }).where(and(eq(s.dayNotes.studentId, miras), eq(s.dayNotes.date, date), eq(s.dayNotes.authorId, aigul))).run(),
+  );
   fill(aliya, anyaV1.goalIds, [0.35, 0.5], 0.06);
 
   db.insert(s.dayNotes).values({
